@@ -16,7 +16,6 @@ const testCreds = {
   signature:
     "0x07138e4c38e8d8541920a087641017f4d32dcf1d100e94db46d1fd67fa59edf23ab7514a2b9cdc613d7264485764e79aa01d243dfba0b87171675f5219aae7651c",
   birthdate: "",
-  city: "",
   completedAt: "2022-09-13",
   countryCode: 2,
   subdivision: "",
