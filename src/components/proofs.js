@@ -8,6 +8,7 @@ import {
   getStateAsHexString,
   getDateAsHexString,
   serializeProof,
+  poseidonTwoInputs,
   poseidonHashQuinary,
   createLeaf,
   onAddLeafProof,
@@ -81,24 +82,21 @@ const Proofs = () => {
     // } else if(error == "Please connect your wallet") {
     //   setError("");
     // }
+    const salt =  "18450029681611047275023442534946896643130395402313725026917000686233641593164"; // this number is poseidon("IsFromUS")
+    const footprint = await poseidonTwoInputs([
+      salt, 
+      ethers.BigNumber.from(newSecret).toString()
+    ]);
+    console.log("footprint is", footprint);
+    console.log("footprint isn't", await poseidonHashQuinary(["0","0","0","0","0"]));
+
     const [root_, leaf_, path_, indices_] = serializedMerkleProof;
-    console.log("args", 
-      root_,
-      address || "0xC8834C1FcF0Df6623Fc8C8eD25064A4148D99388", //Delete that lmao
-      serverAddress,
-      creds.countryCode,
-      creds.subdivisionHex,
-      creds.completedAtHex,
-      creds.birthdateHex,
-      newSecret,
-      leaf_, 
-      path_,
-      indices_
-    );
     const lob3Proof = await proofOfResidency(
       root_,
-      address || "0xC8834C1FcF0Df6623Fc8C8eD25064A4148D99388", //Delete that lmao      
+      address || "0x483293fCB4C2EE29A02D74Ff98C976f9d85b1AAd", //Delete that lmao      
       serverAddress,
+      salt,
+      footprint,
       creds.countryCode,
       creds.subdivisionHex,
       creds.completedAtHex,

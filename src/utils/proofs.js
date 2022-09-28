@@ -172,6 +172,7 @@ export function serializeProof(proof, hash) {
     artifacts.poseidonTwoInputs,
     input
   );
+  console.log("output is 2", output)
   return output.replaceAll('"', "");
 }
 
@@ -191,10 +192,11 @@ export function poseidonHashQuinary(input) {
     throw new Error("Poseidon hash has not been loaded");
   }
 
-  const { witness, output } = zokProvider.computeWitness(
+  let { witness, output } = zokProvider.computeWitness(
     artifacts.poseidonQuinary,
     input
   );
+  console.log("output is 3", output)
   return output.replaceAll('"', "");
 }
 
@@ -356,6 +358,8 @@ export async function onAddLeafProof(
 /**
  * @param {string} issuer Hex string
  * @param {string} secret Hex string representing 16 bytes
+ * @param {string} salt Hex string representing 16 bytes
+ * @param {string} footprint Hex string representing 16 bytes
  * @param {number} countryCode
  * @param {string} subdivision UTF-8
  * @param {string} completedAt Hex string representing 3 bytes
@@ -367,6 +371,8 @@ export async function proofOfResidency(
   root,
   sender,
   issuer,
+  salt,
+  footprint,
   countryCode,
   subdivision,
   completedAt,
