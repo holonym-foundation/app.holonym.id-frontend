@@ -13,6 +13,13 @@
     ],
     "output": { "type": "tuple", "components": { "elements": [] } }
   },
+  "poseidonTwoInputs": {
+    "inputs": [
+      { "name": "salt", "public": true, "type": "field" },
+      { "name": "nullifier", "public": false, "type": "field" }
+    ],
+    "output": { "type": "field" }
+  },
   "poseidonQuinary": {
     "inputs": [
       { "name": "n1", "public": true, "type": "field" },

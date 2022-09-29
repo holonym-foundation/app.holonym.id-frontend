@@ -12,6 +12,7 @@ const instructionStyles = {
   lineHeight: "1.5",
 };
 
+// NOTE: this signature is invalid because the credentials were changed to test later steps
 const testCreds = {
   secret: "0x4704a39e96c1753b525d8734a37685b8",
   signature:
@@ -31,7 +32,6 @@ const Verified = () => {
   const navigate = useNavigate();
 
   async function getCredentials() {
-    console.log("TEMP SEC", localStorage.getItem("holoTempSecret"));
     if (!localStorage.getItem("holoTempSecret")) {
       return;
     }
@@ -84,11 +84,12 @@ const Verified = () => {
         setError(undefined);
       }
       const credsTemp = await getCredentials();
-      console.log("creds temp", JSON.stringify(credsTemp));
-      await storeCredentials(credsTemp);
+      // const TESTING_DELETE_THIS_REPLACE_WITH_credsTemp = {"countryCode":0,"subdivision":"","completedAt":"","birthdate":"","secret":"0x66c1aba83c5fd258efbcaefa2733698b","signature":"0xe846a35faf13877a0dc51328dda1a19b9e0b18c5be3a0bd83d10c681636b33a700ec7326ec6e95ebf2ea8f29382d9de77d6653ce18e1efa1c8d381eba274cdea1b","newSecret":"0x754d7f46a424aa10b75f05b095273e83"}
+      console.log("storing creds");
+      await storeCredentials(credsTemp, () => navigate("/zk-id/proofs/addLeaf")); //process?.env?.NODE_ENV === "development" ? testCreds : credsTemp);
     }
     try {
-      func().then((x) => navigate("/zk-id/addLeaf"));
+      func().then(/*x=>navigate('/zk-id/addLeaf')*/);
     } catch (err) {
       console.log(err);
       setError(`Error: ${err.message}`);

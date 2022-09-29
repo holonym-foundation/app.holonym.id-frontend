@@ -74,16 +74,18 @@ async function encryptForExtension(message) {
  * @param {Object} credentials creds object from Holonym server
  */
 export async function storeCredentials(credentials) {
-  const { encryptedMessage, sharded } = await encryptForExtension(credentials);
-
-  // Send encrypted credentials to Holonym extension
-  const payload = {
-    command: "setHoloCredentials",
-    sharded: sharded,
-    credentials: encryptedMessage,
-  };
-  // eslint-disable-next-line no-undef
-  chrome.runtime.sendMessage(extensionId, payload);
+  return new Promise(async (resolve) => {
+    const { encryptedMessage, sharded } = await encryptForExtension(credentials);
+    // Send encrypted credentials to Holonym extension
+    const payload = {
+      command: "setHoloCredentials",
+      sharded: sharded,
+      credentials: encryptedMessage,
+    };
+    const callback = (resp) => resolve(resp);
+    // eslint-disable-next-line no-undef
+    chrome.runtime.sendMessage(extensionId, payload, callback);
+  });
 }
 
 // For case where user hasn't registered prior to attempting to store credentials
