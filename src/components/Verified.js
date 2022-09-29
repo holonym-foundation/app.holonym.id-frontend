@@ -13,7 +13,7 @@ const instructionStyles = {
 };
 
 // NOTE: this signature is invalid because the credentials were changed to test later steps
-const testCreds = {"countryCode":0,"subdivision":"CA","completedAt":"06-09-1969","birthdate":"09-06-1996","secret":"0x89e0bc2174cb908298ce2f38987995a1","signature":"0x6440eb3b1871fa0e5ad052b81fb6cfe570b8ec74e753c45462778ef5f3302e17071cf538fa78d7c99a2c98e370f7d85ff82942364e8110f2960caf51819128c71b"}; 
+// const testCreds = {"countryCode":0,"subdivision":"CA","completedAt":"1969-06-09","birthdate":"1996-09-06","secret":"0x89e0bc2174cb908298ce2f38987995a1","signature":"0x6440eb3b1871fa0e5ad052b81fb6cfe570b8ec74e753c45462778ef5f3302e17071cf538fa78d7c99a2c98e370f7d85ff82942364e8110f2960caf51819128c71b"}; 
 
 // Display success message, and retrieve user credentials to store in browser
 const Verified = () => {
@@ -24,7 +24,9 @@ const Verified = () => {
   const navigate = useNavigate();
 
   async function getCredentials() {
-    console.log("TEMP SEC", localStorage.getItem("holoTempSecret"))
+    console.log("DELETE THIS LINE; BLINDLY SETTING CREDENTIALS:")
+    return {"countryCode":0,"subdivision":"","completedAt":"","birthdate":"","secret":"0x66c1aba83c5fd258efbcaefa2733698b","signature":"0xe846a35faf13877a0dc51328dda1a19b9e0b18c5be3a0bd83d10c681636b33a700ec7326ec6e95ebf2ea8f29382d9de77d6653ce18e1efa1c8d381eba274cdea1b","newSecret":"0x754d7f46a424aa10b75f05b095273e83"};
+
     if (!localStorage.getItem("holoTempSecret")) {
       return;
     }
@@ -77,11 +79,12 @@ const Verified = () => {
         setError(undefined);
       }
       const credsTemp = await getCredentials();
-      console.log("creds temp", JSON.stringify(credsTemp));
-      await storeCredentials(process?.env?.NODE_ENV === "development" ? testCreds : credsTemp);
+      // const TESTING_DELETE_THIS_REPLACE_WITH_credsTemp = {"countryCode":0,"subdivision":"","completedAt":"","birthdate":"","secret":"0x66c1aba83c5fd258efbcaefa2733698b","signature":"0xe846a35faf13877a0dc51328dda1a19b9e0b18c5be3a0bd83d10c681636b33a700ec7326ec6e95ebf2ea8f29382d9de77d6653ce18e1efa1c8d381eba274cdea1b","newSecret":"0x754d7f46a424aa10b75f05b095273e83"}
+      console.log("storing creds")
+      await storeCredentials(credsTemp, ()=>navigate("/zk-id/proofs/addLeaf"));//process?.env?.NODE_ENV === "development" ? testCreds : credsTemp);
     }
     try {
-      func().then(x=>navigate('/zk-id/addLeaf'));
+      func().then(/*x=>navigate('/zk-id/addLeaf')*/);
     } catch (err) {
       console.log(err);
       setError(`Error: ${err.message}`);

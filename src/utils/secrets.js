@@ -71,10 +71,9 @@ async function encryptForExtension(message) {
 /**
  * Encrypt and store the provided credentials with the Holonym browser extension.
  * @param {Object} credentials creds object from Holonym server
+ * @param {Function} callback function to call when credentials have been set
  */
-export async function storeCredentials(credentials) {
-  console.log("storing credentials...");
-  console.log(credentials);
+export async function storeCredentials(credentials, callback) {
   const { encryptedMessage, sharded } = await encryptForExtension(credentials);
 
   // Send encrypted credentials to Holonym extension
@@ -84,7 +83,7 @@ export async function storeCredentials(credentials) {
     credentials: encryptedMessage,
   };
   // eslint-disable-next-line no-undef
-  chrome.runtime.sendMessage(extensionId, payload);
+  chrome.runtime.sendMessage(extensionId, payload, callback);
 }
 
 // For case where user hasn't registered prior to attempting to store credentials
