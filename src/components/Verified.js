@@ -3,6 +3,7 @@ import { useAccount, useSignMessage } from "wagmi";
 import { IncrementalMerkleTree } from "@zk-kit/incremental-merkle-tree";
 import { storeCredentials, getIsHoloRegistered } from "../utils/secrets";
 import { zkIdVerifyEndpoint } from "../constants/misc";
+import { useNavigate } from "react-router-dom";
 
 const instructionStyles = {
   marginBottom: "10px",
@@ -27,8 +28,10 @@ const Verified = () => {
   const [loading, setLoading] = useState();
   const [registered, setRegistered] = useState(false);
   const [creds, setCreds] = useState();
+  const navigate = useNavigate();
 
   async function getCredentials() {
+    console.log("TEMP SEC", localStorage.getItem("holoTempSecret"));
     if (!localStorage.getItem("holoTempSecret")) {
       return;
     }
@@ -81,10 +84,13 @@ const Verified = () => {
         setError(undefined);
       }
       const credsTemp = await getCredentials();
-      await storeCredentials(credsTemp);
+      console.log("creds temp", JSON.stringify(credsTemp));
+      await storeCredentials(
+        process?.env?.NODE_ENV === "development" ? testCreds : credsTemp
+      );
     }
     try {
-      func();
+      func().then((x) => navigate("/zk-id/addLeaf"));
     } catch (err) {
       console.log(err);
       setError(`Error: ${err.message}`);

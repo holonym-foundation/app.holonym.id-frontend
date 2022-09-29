@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
-import { useAccount, useSignMessage } from "wagmi";
+import { useAccount, useSignMessage, useConnect, chain } from "wagmi";
 import { zkIdVerifyEndpoint } from "../constants/misc";
+import WalletModal from "./atoms/WalletModal";
 
 const Verify = (props) => {
-  const { data: account } = useAccount();
+  const { data: account } = useAccount();  
   const { data, isLoading, signMessage } = useSignMessage({
     onSuccess(data, variables) {
       window.location.href = `${zkIdVerifyEndpoint}/register?address=${account.address}&signature=${data}`;
     },
   });
+  const walletIsConnected = account?.address && account?.connector;
+  const [walletModalShowing, setWalletModalShowing] = useState(walletIsConnected);
   const [error, setError] = useState(undefined);
   // Get secret message to sign from server
   async function getSecretMessage() {
@@ -93,13 +96,15 @@ const Verify = (props) => {
               marginTop: "25px",
             }}
           >
-            <div onClick={handleClick} className="verification-button">
-              Verify yourself
+            <div onClick={walletIsConnected ? handleClick : ()=>setWalletModalShowing(true)} className="verification-button">
+              {walletIsConnected ? "Verify yourself" : "Connect Wallet"}
             </div>
           </div>
           {error && <p>Error: {error}</p>}
         </div>
       </div>
+      <WalletModal visible={walletModalShowing} setVisible={setWalletModalShowing} blur={true} />
+
     </>
   );
 };

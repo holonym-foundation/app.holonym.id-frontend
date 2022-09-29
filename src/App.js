@@ -8,7 +8,6 @@ import { HomeLogo } from "./components/logo.js";
 import { Lookup } from "./components/lookup.js";
 import Verify from "./components/verify";
 import Verified from "./components/Verified";
-import Proofs from './components/proofs';
 import React, { useEffect, useState } from "react";
 import WebFont from "webfontloader";
 import Address from "./components/atoms/Address.js";
@@ -19,6 +18,7 @@ import { useConnect, useAccount, useNetwork } from "wagmi";
 import { ChainSwitcher, ChainSwitcherModal, useDesiredChain } from "./components/chain-switcher";
 import Error from "./components/errors.js";
 
+const Proofs = React.lazy(() => import("./components/proofs"));
 
 function App() {
   const { desiredChain, setDesiredChain } = useDesiredChain();

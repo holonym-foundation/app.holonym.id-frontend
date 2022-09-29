@@ -2,9 +2,16 @@
  * Helpers for interacting with Holonym browser extension and for zokrates
  */
 
-const extensionId = "oehcghhbelloglknnpdgoeammglelgna";
-// const extensionId = "cilbidmppfndfhjafdlngkaabddoofea"; // for tests
+console.log(process.env.REACT_APP_EXTENSION_ID, process.env)
+let extensionId;
+ if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
+  extensionId = process.env.REACT_APP_EXTENSION_ID || "cilbidmppfndfhjafdlngkaabddoofea";
+} else {
+  // production code
+  extensionId = "oehcghhbelloglknnpdgoeammglelgna";
+}
 
+console.log(extensionId, "extension id")
 // Max length of encrypt-able string using RSA-OAEP with SHA256 where
 // modulusLength == 4096: 446 characters.
 const maxEncryptableLength = 446;
