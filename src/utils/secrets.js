@@ -2,16 +2,17 @@
  * Helpers for interacting with Holonym browser extension and for zokrates
  */
 
-console.log(process.env.REACT_APP_EXTENSION_ID, process.env)
+console.log(process.env.REACT_APP_EXTENSION_ID, process.env);
 let extensionId;
- if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
-  extensionId = process.env.REACT_APP_EXTENSION_ID || "cilbidmppfndfhjafdlngkaabddoofea";
+if (!process.env.NODE_ENV || process.env.NODE_ENV === "development") {
+  extensionId =
+    process.env.REACT_APP_EXTENSION_ID || "cilbidmppfndfhjafdlngkaabddoofea";
 } else {
   // production code
   extensionId = "oehcghhbelloglknnpdgoeammglelgna";
 }
 
-console.log(extensionId, "extension id")
+console.log(extensionId, "extension id");
 // Max length of encrypt-able string using RSA-OAEP with SHA256 where
 // modulusLength == 4096: 446 characters.
 const maxEncryptableLength = 446;
@@ -73,8 +74,6 @@ async function encryptForExtension(message) {
  * @param {Object} credentials creds object from Holonym server
  */
 export async function storeCredentials(credentials) {
-  console.log("storing credentials...");
-  console.log(credentials);
   const { encryptedMessage, sharded } = await encryptForExtension(credentials);
 
   // Send encrypted credentials to Holonym extension
