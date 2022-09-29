@@ -85,9 +85,7 @@ const Verified = () => {
       }
       const credsTemp = await getCredentials();
       console.log("creds temp", JSON.stringify(credsTemp));
-      await storeCredentials(
-        process?.env?.NODE_ENV === "development" ? testCreds : credsTemp
-      );
+      await storeCredentials(credsTemp);
     }
     try {
       func().then((x) => navigate("/zk-id/addLeaf"));
