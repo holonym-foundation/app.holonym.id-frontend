@@ -82,7 +82,7 @@ export async function storeCredentials(credentials) {
       sharded: sharded,
       credentials: encryptedMessage,
     };
-    const callback = (resp) => resolve(resp);
+    const callback = (resp) => resolve(resp?.success);
     // eslint-disable-next-line no-undef
     chrome.runtime.sendMessage(extensionId, payload, callback);
   });

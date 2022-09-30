@@ -5,23 +5,16 @@ import { storeCredentials, getIsHoloRegistered } from "../utils/secrets";
 import { zkIdVerifyEndpoint } from "../constants/misc";
 import { useNavigate } from "react-router-dom";
 
-const instructionStyles = {
-  marginBottom: "10px",
-  fontSize: "16px",
-  fontFamily: "Montserrat, sans-serif",
-  lineHeight: "1.5",
-};
-
-// NOTE: this signature is invalid because the credentials were changed to test later steps
-const testCreds = {
-  secret: "0x4704a39e96c1753b525d8734a37685b8",
-  signature:
-    "0x07138e4c38e8d8541920a087641017f4d32dcf1d100e94db46d1fd67fa59edf23ab7514a2b9cdc613d7264485764e79aa01d243dfba0b87171675f5219aae7651c",
-  birthdate: "",
-  completedAt: "2022-09-13",
-  countryCode: 2,
-  subdivision: "",
-};
+// const testCreds = {
+//   secret: "0x4704a39e96c1753b525d8734a37685b8",
+// // NOTE: this signature is invalid because the credentials were changed to test later steps
+//   signature:
+//     "0x07138e4c38e8d8541920a087641017f4d32dcf1d100e94db46d1fd67fa59edf23ab7514a2b9cdc613d7264485764e79aa01d243dfba0b87171675f5219aae7651c",
+//   birthdate: "",
+//   completedAt: "2022-09-13",
+//   countryCode: 2,
+//   subdivision: "",
+// };
 
 // Display success message, and retrieve user credentials to store in browser
 const Verified = () => {
@@ -86,10 +79,12 @@ const Verified = () => {
       const credsTemp = await getCredentials();
       // const TESTING_DELETE_THIS_REPLACE_WITH_credsTemp = {"countryCode":0,"subdivision":"","completedAt":"","birthdate":"","secret":"0x66c1aba83c5fd258efbcaefa2733698b","signature":"0xe846a35faf13877a0dc51328dda1a19b9e0b18c5be3a0bd83d10c681636b33a700ec7326ec6e95ebf2ea8f29382d9de77d6653ce18e1efa1c8d381eba274cdea1b","newSecret":"0x754d7f46a424aa10b75f05b095273e83"}
       console.log("storing creds");
-      await storeCredentials(credsTemp, () => navigate("/zk-id/proofs/addLeaf")); //process?.env?.NODE_ENV === "development" ? testCreds : credsTemp);
+      const success = await storeCredentials(credsTemp);
+      if (success) navigate("/zk-id/proofs/addLeaf");
+      else setError("Could not receive confirmation from user to store credentials");
     }
     try {
-      func().then(/*x=>navigate('/zk-id/addLeaf')*/);
+      func();
     } catch (err) {
       console.log(err);
       setError(`Error: ${err.message}`);
