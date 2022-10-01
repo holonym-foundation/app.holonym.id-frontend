@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { initialize } from "zokrates-js";
 import { IncrementalMerkleTree } from "@zk-kit/incremental-merkle-tree";
-import { preprocEndpoint, serverAddress } from "../constants/misc";
+import { preprocEndpoint, serverAddress, stateAbbreviations } from "../constants/misc";
 import zokABIs from "../constants/abi/ZokABIs.json";
 
 let zokProvider;
@@ -68,7 +68,13 @@ initialize().then(async (zokratesProvider) => {
  * @returns {string}
  */
 export function getStateAsHexString(state) {
-  return "0x" + new TextEncoder().encode(state).toString().replaceAll(",", "");
+  return (
+    "0x" +
+    new TextEncoder()
+      .encode(stateAbbreviations[state.toUpperCase()])
+      .toString()
+      .replaceAll(",", "")
+  );
 }
 
 /**
@@ -243,7 +249,7 @@ export async function createLeaf(
     ethers.BigNumber.from(issuer).toString(),
     ethers.BigNumber.from(secret).toString(),
     ethers.BigNumber.from(countryCode).toString(),
-    ethers.BigNumber.from(new TextEncoder("utf-8").encode(subdivision)).toString(),
+    ethers.BigNumber.from(subdivision).toString(),
     ethers.BigNumber.from(completedAt).toString(),
     ethers.BigNumber.from(birthdate).toString(),
   ];
@@ -304,7 +310,7 @@ export async function onAddLeafProof(
     ethers.BigNumber.from(newLeaf).toString(),
     ethers.BigNumber.from(issuer).toString(),
     ethers.BigNumber.from(countryCode).toString(),
-    ethers.BigNumber.from(new TextEncoder("utf-8").encode(subdivision)).toString(),
+    ethers.BigNumber.from(subdivision).toString(),
     ethers.BigNumber.from(completedAt).toString(),
     ethers.BigNumber.from(birthdate).toString(),
     ethers.BigNumber.from(oldSecret).toString(),
