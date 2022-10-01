@@ -11,40 +11,57 @@ let verifyingKeys = {};
 
 async function loadArtifacts(circuitName) {
   if (circuitName in artifacts) {
-    console.log(`Note: Trying to load ${circuitName} artifacts, which have already been loaded. Not reloading`);
+    console.log(
+      `Note: Trying to load ${circuitName} artifacts, which have already been loaded. Not reloading`
+    );
     return;
   }
-  const program = await (await fetch(`${preprocEndpoint}/${circuitName}Program`)).arrayBuffer();
+  const program = await (
+    await fetch(`${preprocEndpoint}/${circuitName}Program`)
+  ).arrayBuffer();
   const abi = zokABIs[circuitName];
 
   artifacts[circuitName] = {
-    program : new Uint8Array(program),
-    abi : abi
+    program: new Uint8Array(program),
+    abi: abi,
   };
 }
 
 async function loadProvingKey(circuitName) {
   if (circuitName in provingKeys) {
-    console.log(`Note: Trying to load ${circuitName} provingKey, which has already been loaded. Not reloading`);
+    console.log(
+      `Note: Trying to load ${circuitName} provingKey, which has already been loaded. Not reloading`
+    );
     return;
   }
-  const k = await (await fetch(`${preprocEndpoint}/${circuitName}.proving.key`)).arrayBuffer();
+  const k = await (
+    await fetch(`${preprocEndpoint}/${circuitName}.proving.key`)
+  ).arrayBuffer();
   provingKeys[circuitName] = [...new Uint8Array(k)];
 }
 
 async function loadVerifyingKey(circuitName) {
   if (circuitName in verifyingKeys) {
-    console.log(`Note: Trying to load ${circuitName} verifyingKey, which has already been loaded. Not reloading`);
+    console.log(
+      `Note: Trying to load ${circuitName} verifyingKey, which has already been loaded. Not reloading`
+    );
     return;
   }
-  const k = await (await fetch(`${preprocEndpoint}/${circuitName}.verifying.key`)).json();
+  const k = await (
+    await fetch(`${preprocEndpoint}/${circuitName}.verifying.key`)
+  ).json();
   verifyingKeys[circuitName] = k;
 }
 
-
-loadArtifacts("poseidonQuinary").then(()=>console.log("Poseidon hash for five inputs loaded"));
-loadArtifacts("poseidonTwoInputs").then(()=>console.log("Poseidon hash for two inputs loaded"));
-initialize().then(async (zokratesProvider) => {zokProvider = zokratesProvider});
+loadArtifacts("poseidonQuinary").then(() =>
+  console.log("Poseidon hash for five inputs loaded")
+);
+loadArtifacts("poseidonTwoInputs").then(() =>
+  console.log("Poseidon hash for two inputs loaded")
+);
+initialize().then(async (zokratesProvider) => {
+  zokProvider = zokratesProvider;
+});
 
 /**
  * Convert state (e.g., "California") to a 2-byte representation of its abbreviation.
@@ -157,7 +174,7 @@ export function serializeProof(proof, hash) {
  * @param {Array<string>} input length-2 Array of numbers represented as strings.
  * @returns {string}
  */
- export function poseidonTwoInputs(input) {
+export function poseidonTwoInputs(input) {
   if (input.length !== 2 || !Array.isArray(input)) {
     throw new Error("input must be an array of length 2");
   }
@@ -172,10 +189,9 @@ export function serializeProof(proof, hash) {
     artifacts.poseidonTwoInputs,
     input
   );
-  console.log("output is 2", output)
+  console.log("output is 2", output);
   return output.replaceAll('"', "");
 }
-
 
 /**
  * @param {Array<string>} input length-5 Array of numbers represented as strings.
@@ -196,7 +212,7 @@ export function poseidonHashQuinary(input) {
     artifacts.poseidonQuinary,
     input
   );
-  console.log("output is 3", output)
+  console.log("output is 3", output);
   return output.replaceAll('"', "");
 }
 
@@ -222,7 +238,6 @@ export async function createLeaf(
     // TODO: Make this more sophisticated. Wait for zokProvider to be set or for timeout (e.g., 10s)
     console.log("waiting for zok provider");
     await sleep(5000);
-    
   }
   const args = [
     ethers.BigNumber.from(issuer).toString(),
@@ -238,28 +253,6 @@ export async function createLeaf(
 
   const { witness, output } = zokProvider.computeWitness(artifacts.createLeaf, args);
 
-  // //Delete all this------
-
-  // const keypair1 = {pk : provingKeys.createLeaf, vk : verifyingKeys.createLeaf}
-  // const keypair2 = zokProvider.setup(artifacts.createLeaf.program);
-
-  // const proof1 = zokProvider.generateProof(
-  //   artifacts.createLeaf.program,
-  //   witness,
-  //   keypair1.pk
-  // );
-
-  // const proof2 = zokProvider.generateProof(
-  //   artifacts.createLeaf.program,
-  //   witness,
-  //   keypair2.pk
-  // );
-
-  // console.log("keypais", keypair1, keypair2)
-  // const verification1 = zokProvider.verify(keypair1.vk, proof1);
-  // const verification2 = zokProvider.verify(keypair2.vk, proof2);
-  // console.log({1: verification1, 2: verification2}, "verification")
-  // //-----------
   return output.replaceAll('"', "");
 }
 
@@ -320,7 +313,7 @@ export async function onAddLeafProof(
   // onAddLeafArtifacts = onAddLeafArtifacts ? onAddLeafArtifacts : zokProvider.compile(onAddLeafArtifacts);
   await loadArtifacts("onAddLeaf");
   await loadProvingKey("onAddLeaf");
-  
+
   const { witness, output } = zokProvider.computeWitness(artifacts.onAddLeaf, args);
 
   // //Delete all this------
@@ -403,35 +396,18 @@ export async function proofOfResidency(
 
   await loadArtifacts("proofOfResidency");
   await loadProvingKey("proofOfResidency");
-  console.log("PROVING KEY IS", provingKeys.proofOfResidency.length, provingKeys.proofOfResidency)
+  console.log(
+    "PROVING KEY IS",
+    provingKeys.proofOfResidency.length,
+    provingKeys.proofOfResidency
+  );
   // await loadVerifyingKey("proofOfResidency");
   // console.log("verifying keys 3 ", verifyingKeys);
   // console.log("provingKeys3", provingKeys)
-  const { witness, output } = zokProvider.computeWitness(artifacts.proofOfResidency, args);
-
-  //Delete all this------
-  // await loadVerifyingKey("proofOfResidency");
-
-  // const keypair1 = {pk : provingKeys.proofOfResidency, vk : verifyingKeys.proofOfResidency}
-  // const keypair2 = zokProvider.setup(artifacts.proofOfResidency.program);
-
-  // const proof1 = zokProvider.generateProof(
-  //   artifacts.proofOfResidency.program,
-  //   witness,
-  //   keypair1.pk
-  // );
-
-  // const proof2 = zokProvider.generateProof(
-  //   artifacts.proofOfResidency.program,
-  //   witness,
-  //   keypair2.pk
-  // );
-
-  // console.log("keypais", keypair1, keypair2)
-  // const verification1 = zokProvider.verify(keypair1.vk, proof1);
-  // const verification2 = zokProvider.verify(keypair2.vk, proof2);
-  // console.log({1: verification1, 2: verification2}, "verification")
-  //-----------
+  const { witness, output } = zokProvider.computeWitness(
+    artifacts.proofOfResidency,
+    args
+  );
 
   const proof = zokProvider.generateProof(
     artifacts.proofOfResidency.program,
