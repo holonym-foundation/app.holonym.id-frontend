@@ -114,17 +114,8 @@ const Verified = () => {
 
   async function addLeaf() {
     const newCreds = await requestCredentials();
-    console.log("entered addLeaf");
     const oldSecret = creds.secret;
     const newSecret = newCreds.newSecret;
-    console.log("generating add leaf proof. args...");
-    console.log(serverAddress);
-    console.log(creds.countryCode);
-    console.log(creds.subdivisionHex);
-    console.log(creds.completedAtHex);
-    console.log(creds.birthdateHex);
-    console.log(oldSecret);
-    console.log(newSecret);
     const oalProof = await onAddLeafProof(
       serverAddress,
       creds.countryCode,
@@ -139,7 +130,6 @@ const Verified = () => {
     const RELAYER_URL = "https://relayer.holonym.id";
     let res;
     try {
-      console.log("sending post request");
       res = await axios.post(`${RELAYER_URL}/addLeaf`, {
         addLeafArgs: {
           issuer: serverAddress,
@@ -154,7 +144,6 @@ const Verified = () => {
       console.log("There was an error:", e);
       setError("There was an error in submitting your transaction");
     }
-    console.log("RECEIVED RESULT...");
     console.log("result");
     console.log(res);
   }
