@@ -7,7 +7,7 @@ import Registry from "./components/registry.js";
 import { HomeLogo } from "./components/logo.js";
 import { Lookup } from "./components/lookup.js";
 import Verify from "./components/verify";
-import Verified from "./components/Verified";
+import Verified from "./components/verified";
 import React, { useEffect, useState } from "react";
 import WebFont from "webfontloader";
 import Address from "./components/atoms/Address.js";
@@ -15,7 +15,11 @@ import WalletModal from "./components/atoms/WalletModal";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useConnect, useAccount, useNetwork } from "wagmi";
 // import { desiredChain } from "./constants/desiredChain";
-import { ChainSwitcher, ChainSwitcherModal, useDesiredChain } from "./components/chain-switcher";
+import {
+  ChainSwitcher,
+  ChainSwitcherModal,
+  useDesiredChain,
+} from "./components/chain-switcher";
 import Error from "./components/errors.js";
 
 const Proofs = React.lazy(() => import("./components/proofs"));
@@ -34,19 +38,19 @@ function App() {
     });
   }, []);
 
-
   let myHoloPage = <AuthenticationFlow />;
 
-  
-
   return (
-    
     <div className="App x-section wf-section bg-img">
       <div className="x-container nav w-container">
-        <WalletModal visible={walletModalShowing} setVisible={setWalletModalShowing} blur={true} />
+        <WalletModal
+          visible={walletModalShowing}
+          setVisible={setWalletModalShowing}
+          blur={true}
+        />
         <HomeLogo />
 
-        {(account?.address && account?.connector) ? (
+        {account?.address && account?.connector ? (
           <Address address={account.address} />
         ) : (
           <div className="nav-btn">
@@ -54,11 +58,9 @@ function App() {
               className="wallet-connected nav-button"
               // disabled={!connectors[0].ready}
               // key={connectors[0].id}
-              onClick={()=>setWalletModalShowing(true)}
+              onClick={() => setWalletModalShowing(true)}
             >
-              <div style={{opacity:0.5}}>
-                Connect Wallet
-              </div>
+              <div style={{ opacity: 0.5 }}>Connect Wallet</div>
             </div>
           </div>
         )}
@@ -83,31 +85,49 @@ function App() {
           {/*Google has a different syntax and redirect pattern than ORCID*/}
           <Route
             path="/google/token/:token"
-            element={<AuthenticationFlow credentialClaim={"email"} web2service={"Google"} />}
+            element={
+              <AuthenticationFlow credentialClaim={"email"} web2service={"Google"} />
+            }
           />
 
           <Route
             path="/twitter/token/:token"
-            element={<AuthenticationFlow credentialClaim={"creds"} web2service={"Twitter"} />}
+            element={
+              <AuthenticationFlow credentialClaim={"creds"} web2service={"Twitter"} />
+            }
           />
           <Route
             path="/GitHub/token/:token"
-            element={<AuthenticationFlow credentialClaim={"creds"} web2service={"Github"} />}
+            element={
+              <AuthenticationFlow credentialClaim={"creds"} web2service={"Github"} />
+            }
           />
           <Route
             path="/discord/token/:token"
-            element={<AuthenticationFlow credentialClaim={"creds"} web2service={"Discord"} />}
+            element={
+              <AuthenticationFlow credentialClaim={"creds"} web2service={"Discord"} />
+            }
           />
 
           <Route path="/lookup/:web2service/:credentials" element={<Lookup />} />
           <Route path="/l/:web2service/:credentials" element={<Lookup />} />
           <Route path="/lookup" element={<Lookup />} />
-          <Route exact path={"/whitepaper"} element={
-          <div className="bg-img x-section wf-section" style={{ width: "100vw" }}>
-            <div style={{height:"80vh", width: "100vw"}}>
-              {/* <embed src="https://holonym.id/whitepaper.pdf" width="800px" height="2100px" /> */}
-              <embed src="http://www.africau.edu/images/default/sample.pdf" width="100%" height="100%" /> 
-          </div></div>} />
+          <Route
+            exact
+            path={"/whitepaper"}
+            element={
+              <div className="bg-img x-section wf-section" style={{ width: "100vw" }}>
+                <div style={{ height: "80vh", width: "100vw" }}>
+                  {/* <embed src="https://holonym.id/whitepaper.pdf" width="800px" height="2100px" /> */}
+                  <embed
+                    src="http://www.africau.edu/images/default/sample.pdf"
+                    width="100%"
+                    height="100%"
+                  />
+                </div>
+              </div>
+            }
+          />
           <Route path="/registry" element={<Registry />} />
           {/* <Route path='/private' element={<LitCeramic stringToEncrypt={JWTObject.header.raw + '.' + JWTObject.payload.raw}/>} /> */}
           <Route path={"/"} element={myHoloPage} />
