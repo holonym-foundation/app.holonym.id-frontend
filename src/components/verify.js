@@ -4,7 +4,7 @@ import { zkIdVerifyEndpoint } from "../constants/misc";
 import WalletModal from "./atoms/WalletModal";
 
 const Verify = (props) => {
-  const { data: account } = useAccount();  
+  const { data: account } = useAccount();
   const { data, isLoading, signMessage } = useSignMessage({
     onSuccess(data, variables) {
       window.location.href = `${zkIdVerifyEndpoint}/register?address=${account.address}&signature=${data}`;
@@ -96,15 +96,23 @@ const Verify = (props) => {
               marginTop: "25px",
             }}
           >
-            <div onClick={walletIsConnected ? handleClick : ()=>setWalletModalShowing(true)} className="verification-button">
+            <div
+              onClick={
+                walletIsConnected ? handleClick : () => setWalletModalShowing(true)
+              }
+              className="x-button-blue"
+            >
               {walletIsConnected ? "Verify yourself" : "Connect Wallet"}
             </div>
           </div>
           {error && <p>Error: {error}</p>}
         </div>
       </div>
-      <WalletModal visible={walletModalShowing} setVisible={setWalletModalShowing} blur={true} />
-
+      <WalletModal
+        visible={walletModalShowing}
+        setVisible={setWalletModalShowing}
+        blur={true}
+      />
     </>
   );
 };

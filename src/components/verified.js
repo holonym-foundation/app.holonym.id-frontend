@@ -1,28 +1,36 @@
 import { useState, useEffect } from "react";
+import { ethers } from "ethers";
+import axios from "axios";
 import { useAccount, useSignMessage } from "wagmi";
 import { IncrementalMerkleTree } from "@zk-kit/incremental-merkle-tree";
-import { storeCredentials, getIsHoloRegistered } from "../utils/secrets";
-import { zkIdVerifyEndpoint } from "../constants/misc";
-import { useNavigate } from "react-router-dom";
+import {
+  storeCredentials,
+  getIsHoloRegistered,
+  requestCredentials,
+} from "../utils/secrets";
+import { zkIdVerifyEndpoint, serverAddress } from "../constants/misc";
+import {
+  getStateAsHexString,
+  getDateAsHexString,
+  onAddLeafProof,
+} from "../utils/proofs";
 
-// const testCreds = {
-//   secret: "0x4704a39e96c1753b525d8734a37685b8",
-// // NOTE: this signature is invalid because the credentials were changed to test later steps
-//   signature:
-//     "0x07138e4c38e8d8541920a087641017f4d32dcf1d100e94db46d1fd67fa59edf23ab7514a2b9cdc613d7264485764e79aa01d243dfba0b87171675f5219aae7651c",
-//   birthdate: "",
-//   completedAt: "2022-09-13",
-//   countryCode: 2,
-//   subdivision: "",
-// };
+// For test credentials, see id-server/src/main/utils/constants.js
+const dummyUserCreds = {
+  countryCode: 2,
+  subdivision: "New York",
+  completedAt: "2022-09-16", // "2022-09-16T02:21:59.510Z",
+  birthdate: "1950-01-01",
+};
 
 // Display success message, and retrieve user credentials to store in browser
 const Verified = () => {
   const [error, setError] = useState();
   const [loading, setLoading] = useState();
+  const [storageSuccess, setStorageSuccess] = useState(false);
   const [registered, setRegistered] = useState(false);
+  // TODO: Check whether user is logged in too
   const [creds, setCreds] = useState();
-  const navigate = useNavigate();
 
   async function getCredentials() {
     if (!localStorage.getItem("holoTempSecret")) {
@@ -63,9 +71,6 @@ const Verified = () => {
   }
 
   useEffect(() => {
-    // For testing
-    // storeCredentials(testCreds);
-
     async function func() {
       const isRegistered = await getIsHoloRegistered();
       // Only setRegistered at this first check. If user had not registered before
@@ -77,11 +82,17 @@ const Verified = () => {
         setError(undefined);
       }
       const credsTemp = await getCredentials();
-      // const TESTING_DELETE_THIS_REPLACE_WITH_credsTemp = {"countryCode":0,"subdivision":"","completedAt":"","birthdate":"","secret":"0x66c1aba83c5fd258efbcaefa2733698b","signature":"0xe846a35faf13877a0dc51328dda1a19b9e0b18c5be3a0bd83d10c681636b33a700ec7326ec6e95ebf2ea8f29382d9de77d6653ce18e1efa1c8d381eba274cdea1b","newSecret":"0x754d7f46a424aa10b75f05b095273e83"}
+      setCreds({
+        ...credsTemp,
+        subdivisionHex: getStateAsHexString(credsTemp.subdivision),
+        completedAtHex: getDateAsHexString(credsTemp.completedAt),
+        birthdateHex: getDateAsHexString(credsTemp.birthdate),
+      });
       console.log("storing creds");
       const success = await storeCredentials(credsTemp);
-      if (success) navigate("/zk-id/proofs/addLeaf");
-      else setError("Could not receive confirmation from user to store credentials");
+      setStorageSuccess(success);
+      if (!success)
+        setError("Could not receive confirmation from user to store credentials");
     }
     try {
       func();
@@ -89,14 +100,71 @@ const Verified = () => {
       console.log(err);
       setError(`Error: ${err.message}`);
     }
+    // For tests
+    // storeCredentials(dummyUserCreds).then((success) => {
+    //   setCreds({
+    //     ...dummyUserCreds,
+    //     subdivisionHex: getStateAsHexString(dummyUserCreds.subdivision),
+    //     completedAtHex: getDateAsHexString(dummyUserCreds.completedAt),
+    //     birthdateHex: getDateAsHexString(dummyUserCreds.birthdate),
+    //   });
+    //   setStorageSuccess(success);
+    // });
   }, []);
+
+  async function addLeaf() {
+    const newCreds = await requestCredentials();
+    console.log("entered addLeaf");
+    const oldSecret = creds.secret;
+    const newSecret = newCreds.newSecret;
+    console.log("generating add leaf proof. args...");
+    console.log(serverAddress);
+    console.log(creds.countryCode);
+    console.log(creds.subdivisionHex);
+    console.log(creds.completedAtHex);
+    console.log(creds.birthdateHex);
+    console.log(oldSecret);
+    console.log(newSecret);
+    const oalProof = await onAddLeafProof(
+      serverAddress,
+      creds.countryCode,
+      creds.subdivisionHex,
+      creds.completedAtHex,
+      creds.birthdateHex,
+      oldSecret,
+      newSecret
+    );
+    console.log("oalProof", oalProof);
+    const { v, r, s } = ethers.utils.splitSignature(creds.signature);
+    const RELAYER_URL = "https://relayer.holonym.id";
+    let res;
+    try {
+      console.log("sending post request");
+      res = await axios.post(`${RELAYER_URL}/addLeaf`, {
+        addLeafArgs: {
+          issuer: serverAddress,
+          v: v,
+          r: r,
+          s: s,
+          zkp: oalProof.proof,
+          zkpInputs: oalProof.inputs,
+        },
+      });
+    } catch (e) {
+      console.log("There was an error:", e);
+      setError("There was an error in submitting your transaction");
+    }
+    console.log("RECEIVED RESULT...");
+    console.log("result");
+    console.log(res);
+  }
 
   return (
     <>
       {error ? (
         <p>{error}</p>
       ) : loading ? (
-        <h3 style={{ textAlign: "center" }}>Loading...</h3>
+        <h3 style={{ textAlign: "center" }}>Loading credentials...</h3>
       ) : (
         <div>
           <h3 style={{ textAlign: "center" }}>Almost finished!</h3>
@@ -121,10 +189,34 @@ const Verified = () => {
                 <p>
                   <li>Confirm your credentials</li>
                 </p>
+                <li>
+                  <p>Share your credentials</p>
+                  <p style={{ fontSize: ".8em" }}>
+                    (The extension generates a new secret for you and requires your
+                    consent to share it)
+                  </p>
+                </li>
+                <li>
+                  <p>Mint your Holo</p>
+                </li>
               </ol>
             </i>
             <br />
-            <h4>The Holonym extension will then store your encrypted credentials.</h4>
+            <h4>The Holonym extension will store your encrypted credentials.</h4>
+            <br />
+            {creds && storageSuccess ? (
+              <div style={{ textAlign: "center" }}>
+                <button className="x-button-blue" onClick={addLeaf}>
+                  Mint Your Holo
+                </button>
+              </div>
+            ) : (
+              <div style={{ textAlign: "center" }}>
+                <button className="x-button-blue greyed-out-button">
+                  Mint Your Holo
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

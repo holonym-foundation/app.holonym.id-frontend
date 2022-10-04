@@ -1,3 +1,7 @@
+:root {
+  --holo-light-blue: #6093e5;
+}
+
 .App {
   min-height: 100vh;
   display: flex;
@@ -7,14 +11,14 @@
   font-size: calc(10px + 2vmin);
   color: white;
 }
-  
+
 .cool-button {
   margin: 20px;
   background-color: rgba(54, 57, 102, 0.534);
   color: white;
   border: none;
   font-size: 20px;
-  height:60px;
+  height: 60px;
   width: 150;
 }
 
@@ -22,7 +26,6 @@
   border: 1px dashed limegreen;
   color: limegreen;
   border-radius: 3px;
-  
 }
 
 .verification-button {
@@ -58,6 +61,36 @@
   color: #e1eb81;
 }
 
+.x-button-blue {
+  padding: 13px 36px;
+  border-radius: 7px;
+  background-color: var(--holo-light-blue);
+  /* background-color: #fdc094; */
+  -webkit-transition: background-color 500ms cubic-bezier(0.23, 1, 0.32, 1);
+  transition: background-color 500ms cubic-bezier(0.23, 1, 0.32, 1);
+  font-family: "Clover Medium", sans-serif;
+  color: #02070c;
+  font-size: 18px;
+  line-height: 1.2;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.x-button-blue:hover {
+  background-color: #fff;
+  cursor: pointer;
+}
+
+.greyed-out-button {
+  opacity: 0.5;
+}
+
+.x-button-blue.greyed-out-button:hover {
+  background-color: var(--holo-light-blue);
+  cursor: not-allowed;
+}
+
 .address-truncated {
   margin: 20px;
   background-color: rgba(54, 57, 102, 0.534);
@@ -65,8 +98,8 @@
   color: lightgrey;
   border-radius: 30px;
   position: fixed;
-  top:0px;
-  right:0px;
+  top: 0px;
+  right: 0px;
   font-size: 24px;
   height: 42px;
   width: 150px;
@@ -79,8 +112,8 @@
   color: magenta;
   border-radius: 3px; */
   position: fixed;
-  top:0px;
-  right:0px;
+  top: 0px;
+  right: 0px;
   /* font-size: 20px;
   height:60px;
   width: 150; */
@@ -90,7 +123,6 @@
   border: 1px dashed yellow;
   color: yellow;
   border-radius: 3px;
-  
 }
 
 .message {
@@ -100,8 +132,8 @@
 }
 
 .simple-peach-link {
-  -webkit-transition: all 500ms cubic-bezier(.23, 1, .32, 1);
-  transition: all 500ms cubic-bezier(.23, 1, .32, 1);
+  -webkit-transition: all 500ms cubic-bezier(0.23, 1, 0.32, 1);
+  transition: all 500ms cubic-bezier(0.23, 1, 0.32, 1);
   font-family: Montserrat, sans-serif;
   color: #fdc094;
   text-decoration: none;
