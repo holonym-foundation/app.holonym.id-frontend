@@ -26,7 +26,7 @@ const dummyUserCreds = {
 // Display success message, and retrieve user credentials to store in browser
 const Verified = () => {
   const [error, setError] = useState();
-  const [loading, setLoading] = useState();
+  const [loading, setLoading] = useState(true);
   const [storageSuccess, setStorageSuccess] = useState(false);
   const [registered, setRegistered] = useState(false);
   // TODO: Check whether user is logged in too
@@ -82,17 +82,21 @@ const Verified = () => {
         setError(undefined);
       }
       const credsTemp = await getCredentials();
-      setCreds({
-        ...credsTemp,
-        subdivisionHex: getStateAsHexString(credsTemp.subdivision),
-        completedAtHex: getDateAsHexString(credsTemp.completedAt),
-        birthdateHex: getDateAsHexString(credsTemp.birthdate),
-      });
       console.log("storing creds");
       const success = await storeCredentials(credsTemp);
       setStorageSuccess(success);
       if (!success)
         setError("Could not receive confirmation from user to store credentials");
+      else {
+        // Request credentials. Need to request because extension generates new secret
+        const newCreds = await requestCredentials();
+        setCreds({
+          ...newCreds,
+          subdivisionHex: getStateAsHexString(newCreds.subdivision),
+          completedAtHex: getDateAsHexString(newCreds.completedAt),
+          birthdateHex: getDateAsHexString(newCreds.birthdate),
+        });
+      }
     }
     try {
       func();
@@ -101,21 +105,22 @@ const Verified = () => {
       setError(`Error: ${err.message}`);
     }
     // For tests
-    // storeCredentials(dummyUserCreds).then((success) => {
+    // setLoading(false);
+    // storeCredentials(dummyUserCreds).then(async (success) => {
+    //   const newCreds = await requestCredentials();
     //   setCreds({
-    //     ...dummyUserCreds,
-    //     subdivisionHex: getStateAsHexString(dummyUserCreds.subdivision),
-    //     completedAtHex: getDateAsHexString(dummyUserCreds.completedAt),
-    //     birthdateHex: getDateAsHexString(dummyUserCreds.birthdate),
+    //     ...newCreds,
+    //     subdivisionHex: getStateAsHexString(newCreds.subdivision),
+    //     completedAtHex: getDateAsHexString(newCreds.completedAt),
+    //     birthdateHex: getDateAsHexString(newCreds.birthdate),
     //   });
     //   setStorageSuccess(success);
     // });
   }, []);
 
   async function addLeaf() {
-    const newCreds = await requestCredentials();
     const oldSecret = creds.secret;
-    const newSecret = newCreds.newSecret;
+    const newSecret = creds.newSecret;
     const oalProof = await onAddLeafProof(
       serverAddress,
       creds.countryCode,
