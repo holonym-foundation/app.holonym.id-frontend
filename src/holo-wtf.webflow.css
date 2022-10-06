@@ -1184,6 +1184,17 @@ p {
   border-radius: 10px;
   background-color: #fff0f1;
 }
+.card-popup-inplace {
+  position: fixed;
+  left: auto;
+  top: auto;
+  right: -120px;
+  z-index: 2;
+  padding: 2%;
+  border-radius: 10px;
+  background-color: #fff0f1;
+  max-width: 400px;
+}
 
 .card-popup._2 {
   left: 230px;
