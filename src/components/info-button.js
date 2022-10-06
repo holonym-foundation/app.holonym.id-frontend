@@ -1,19 +1,52 @@
 import { useState, useEffect, useRef } from "react";
 import arrow from "../img/Card-Arrow.svg";
 
-const InfoText = (props) => (
-  <>
-    <div className="card-popup" style={{ display: props.display ? "block" : "none" }}>
-      <p className="card-popup-text">{props.text}</p>
-      <img src={arrow} loading="lazy" alt="" className="popup-arrow"></img>
-    </div>
-  </>
-);
+const InfoText = (props) => {
+  switch(props.type){
+    case "proofMenu":
+      return (
+        <>
+          <div className="card-popup-inplace" style={
+            { 
+              display: props.display ? "block" : "none",
+              left: `${props.clickX + 30}px`,
+              top: `${props.clickY - 10}px`
+            }
+          }>
+            <p className="card-popup-text">{props.text}</p>
+            <img 
+                src={arrow} 
+                style={{
+                  position: "fixed",
+                  left: `${props.clickX + 20}px`,
+                  top: `${props.clickY}px`
+                }} 
+                loading="lazy" 
+                alt="" 
+                className="popup-arrow"></img>
+          </div>
+        </>
+      )
+    default:
+      return (
+      <>
+        <div className="card-popup" style={{ display: props.display ? "block" : "none" }}>
+          <p className="card-popup-text">{props.text}</p>
+          <img src={arrow} loading="lazy" alt="" className="popup-arrow"></img>
+        </div>
+      </>
+      )
+  }
+  
+};
 
 export const InfoButton = (props) => {
   // stop display when clicked outside
   const ref = useRef(null);
   const [display, setDisplay] = useState(false);
+  const [clickX, setClickX] = useState(0);
+  const [clickY, setClickY] = useState(0);
+
   useEffect(() => {
     function handleClick(event) {
       if (ref.current && !ref.current.contains(event.target)) {
@@ -26,7 +59,7 @@ export const InfoButton = (props) => {
 
   return (
     <div ref={ref}>
-      <button className="info-btn w-inline-block" style={{ backgroundColor: "transparent" }} onClick={() => setDisplay(!display)}>
+      <button className="info-btn w-inline-block" style={{ backgroundColor: "transparent" }} onClick={(event) => {setDisplay(!display); console.log("event", event); setClickX(event.clientX); setClickY(event.clientY)}}>
         <div className="info-img w-embed">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
@@ -45,7 +78,7 @@ export const InfoButton = (props) => {
         </div>
       </button>
 
-      <InfoText display={display} text={props.text}></InfoText>
+      <InfoText display={display} text={props.text} type={props.type} clickX={clickX} clickY={clickY}></InfoText>
     </div>
   );
 };
