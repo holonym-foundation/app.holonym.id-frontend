@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import axios from "axios";
-import { useAccount, useSignMessage } from "wagmi";
-import { IncrementalMerkleTree } from "@zk-kit/incremental-merkle-tree";
+import { useParams } from "react-router-dom";
+
 import {
   storeCredentials,
   getIsHoloRegistered,
@@ -14,6 +14,7 @@ import {
   getDateAsHexString,
   onAddLeafProof,
 } from "../utils/proofs";
+import { Success } from "./verified-final-screen";
 
 // For test credentials, see id-server/src/main/utils/constants.js
 const dummyUserCreds = {
@@ -25,23 +26,25 @@ const dummyUserCreds = {
 
 // Display success message, and retrieve user credentials to store in browser
 const Verified = () => {
+  const { jobID } = useParams();
   const [error, setError] = useState();
   const [loading, setLoading] = useState();
   const [storageSuccess, setStorageSuccess] = useState(false);
   const [registered, setRegistered] = useState(false);
+  const [successScreen, setSuccessScreen] = useState(false);
   // TODO: Check whether user is logged in too
   const [creds, setCreds] = useState();
 
   async function getCredentials() {
-    if (!localStorage.getItem("holoTempSecret")) {
-      return;
-    }
+    // if (!localStorage.getItem("holoTempSecret")) {
+    //   return;
+    // }
     setError(undefined);
     setLoading(true);
     try {
-      const secret = localStorage.getItem("holoTempSecret");
+      // const secret = localStorage.getItem("holoTempSecret");
       const resp = await fetch(
-        `${zkIdVerifyEndpoint}/register/credentials?secret=${secret}`
+        `${zkIdVerifyEndpoint}/registerVouched/vouchedCredentials?jobID=${jobID}`
       );
       // Shape of data == { user: completeUser }
       const data = await resp.json();
@@ -82,13 +85,18 @@ const Verified = () => {
         setError(undefined);
       }
       const credsTemp = await getCredentials();
-      setCreds({
-        ...credsTemp,
-        subdivisionHex: getStateAsHexString(credsTemp.subdivision),
-        completedAtHex: getDateAsHexString(credsTemp.completedAt),
-        birthdateHex: getDateAsHexString(credsTemp.birthdate),
-      });
-      console.log("storing creds");
+
+      try {
+        setCreds({
+          ...credsTemp,
+          subdivisionHex: getStateAsHexString(credsTemp.subdivision),
+          completedAtHex: getDateAsHexString(credsTemp.completedAt),
+          birthdateHex: getDateAsHexString(credsTemp.birthdate),
+        });
+      } catch(e) {
+        setError("There was a problem in storing your credentials");
+      }
+
       const success = await storeCredentials(credsTemp);
       setStorageSuccess(success);
       if (!success)
@@ -140,19 +148,23 @@ const Verified = () => {
           zkpInputs: oalProof.inputs,
         },
       });
+      if(res.status == 200) {
+        setSuccessScreen(true);
+      }
     } catch (e) {
       console.log("There was an error:", e);
-      setError("There was an error in submitting your transaction");
+      setError("There was an error in submitting your transaction...perhaps you have already minted a Holo?");
     }
     console.log("result");
     console.log(res);
   }
 
+  if(successScreen) {
+    return <Success />
+  }
   return (
     <>
-      {error ? (
-        <p>{error}</p>
-      ) : loading ? (
+      { loading ? (
         <h3 style={{ textAlign: "center" }}>Loading credentials...</h3>
       ) : (
         <div>
@@ -209,6 +221,7 @@ const Verified = () => {
           </div>
         </div>
       )}
+      <p>{error}</p>
     </>
   );
 };
