@@ -76,7 +76,7 @@ const Proofs = () => {
     console.log(res);
   }
 
-  async function loadLobby3Proof() {
+  async function loadPoR() {
     const newSecret = creds.newSecret;
     const leaf = await createLeaf(
       serverAddress,
@@ -163,8 +163,8 @@ const Proofs = () => {
     if (!creds) return;
     const proofType = params.proofType;
     console.log(`proofType: ${proofType}`);
-    if (proofType === "lobby3") {
-      loadLobby3Proof();
+    if (proofType === "us-residency") {
+      loadPoR();
     } else if (proofType === "addLeaf") {
       // addLeaf();
     }
