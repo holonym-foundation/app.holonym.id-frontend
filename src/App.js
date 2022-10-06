@@ -123,7 +123,9 @@ function App() {
           <Route exact path={"/"} element={<Welcome />} />
           <Route path={"/verified/:jobID"} element={<Verified />} />
           {/* <Route path={"/zk-id/verified"} element={<Verified />} /> */}
-          <Route path={"/prove"} element={<ProofMenu />} />
+          <Route exact path={"/prove"} element={<ProofMenu />} />
+          <Route path={"/prove/:proofType"} element={<Proofs />} />
+          {/* Backwards compatability path: */}
           <Route path={"/zk-id/proofs/:proofType"} element={<Proofs />} />
           {/* <Route path={"/chainswitchertest"} element={<ChainSwitcher />} /> */}
           {/* <Route path={"/chainswitchermodaltest"} element={<ChainSwitcherModal />} /> */}

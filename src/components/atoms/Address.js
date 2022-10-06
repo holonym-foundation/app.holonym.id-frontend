@@ -24,7 +24,7 @@ const Address = (props) => {
           <InnerContent address={account.address} />
         </div>
       ) : (
-        <a href="/myholo" className="wallet-connected">
+        <a className="wallet-connected"> {/*href="/myholo" */}
           <InnerContent address={account.address} />
         </a>
       )}
