@@ -7,6 +7,7 @@ let extensionId;
 if (!process.env.NODE_ENV || process.env.NODE_ENV === "development") {
   extensionId =
     process.env.REACT_APP_EXTENSION_ID || "cilbidmppfndfhjafdlngkaabddoofea";
+  if(!process.env.REACT_APP_EXTENSION_ID){ console.error("Warning: no extension ID specified")}
 } else {
   // production code
   extensionId = "obhgknpelgngeabaclepndihajndjjnb";
