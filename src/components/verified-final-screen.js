@@ -29,7 +29,7 @@ export const Success = (props) => {
                   
                 <div className="spacer-large"></div>
                 
-                <a href="/" className="x-button secondary">
+                <a onClick={()=>navigate("/")} className="x-button secondary">
                   Go back
                 </a>
 
