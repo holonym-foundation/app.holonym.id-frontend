@@ -11,11 +11,29 @@ import {
   poseidonTwoInputs,
   poseidonHashQuinary,
   createLeaf,
-  onAddLeafProof,
   proofOfResidency,
 } from "../utils/proofs";
 import axios from "axios";
 import { serverAddress } from "../constants/misc";
+
+function getMerkleProofParams(leaf) {
+  const leavesFromContract = []; // TODO: Get leaves from merkle tree smart contract
+  const leaves = [...leavesFromContract, leaf];
+  const tree = new IncrementalMerkleTree(poseidonHashQuinary, 14, "0", 5);
+  for (const item of leaves) {
+    tree.insert(item);
+  }
+  const index = tree.indexOf(leaf);
+  const merkleProof = tree.createProof(index);
+  const [root_, leaf_, path_, indices_] = serializeProof(merkleProof, poseidonHashQuinary); 
+  return {
+    root : root_,
+    leaf : leaf_,
+    path : path_,
+    indices : indices_
+  }
+}
+
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -25,55 +43,15 @@ const Proofs = () => {
   const [creds, setCreds] = useState();
   const [error, setError] = useState();
   const [proof, setProof] = useState();
+  const [contractInputs, setContractInputs] = useState();
+  const [submissionConsent, setSubmissionConsent] = useState(false);
+  const [readyToLoadCreds, setReadyToLoadCreds] = useState();
+
   const { address } = useAccount();
 
-  async function addLeaf() {
-    // onAddLeafProof
-    const oldSecret = creds.secret;
-    const newSecret = creds.newSecret;
-    const oalProof = await onAddLeafProof(
-      serverAddress,
-      creds.countryCode,
-      creds.subdivisionHex,
-      creds.completedAtHex,
-      creds.birthdateHex,
-      oldSecret,
-      newSecret
-    );
-    console.log("oalProof", oalProof);
-    const { v, r, s } = ethers.utils.splitSignature(creds.signature);
-    const RELAYER_URL = "https://relayer.holonym.id";
-    // console.log(
-    //   `${RELAYER_URL}/addLeaf`, JSON.stringify({
-    //     addLeafArgs: {
-    //         issuer : serverAddress,
-    //         v :  v,
-    //         r : r,
-    //         s : s,
-    //         zkp : oalProof.proof,
-    //         zkpInputs : oalProof.inputs
-    //     }
-    //   })
-    // )
-    let res;
-    try {
-      res = await axios.post(`${RELAYER_URL}/addLeaf`, {
-        addLeafArgs: {
-          issuer: serverAddress,
-          v: v,
-          r: r,
-          s: s,
-          zkp: oalProof.proof,
-          zkpInputs: oalProof.inputs,
-        },
-      });
-    } catch (e) {
-      console.log("There was an error:", e);
-      setError("There was an error in submitting your transaction");
-    }
-
-    console.log("result");
-    console.log(res);
+  const proofs = {
+    "us-residency" : { name : "US Residency", loadProof : loadPoR },
+    "uniqueness" : { name : "US Residency", loadProof : ()=>null },
   }
 
   async function loadPoR() {
@@ -87,23 +65,15 @@ const Proofs = () => {
       creds.birthdateHex
     );
 
-    console.log("leaf", leaf);
-    const leavesFromContract = []; // TODO: Get leaves from merkle tree smart contract
-    const leaves = [...leavesFromContract, leaf];
-    const tree = new IncrementalMerkleTree(poseidonHashQuinary, 14, "0", 5);
-    for (const item of leaves) {
-      tree.insert(item);
-    }
-    const index = tree.indexOf(leaf);
-    const merkleProof = tree.createProof(index);
-    const serializedMerkleProof = serializeProof(merkleProof, poseidonHashQuinary);
-
     // if(!address) {
     //   setError("Please connect your wallet");
     //   await sleep(1000);
     // } else if(error == "Please connect your wallet") {
     //   setError("");
     // }
+
+    const mp = getMerkleProofParams(leaf);
+
     const salt =
       "18450029681611047275023442534946896643130395402313725026917000686233641593164"; // this number is poseidon("IsFromUS")
     const footprint = await poseidonTwoInputs([
@@ -111,9 +81,8 @@ const Proofs = () => {
       ethers.BigNumber.from(newSecret).toString(),
     ]);
 
-    const [root_, leaf_, path_, indices_] = serializedMerkleProof;
     const lob3Proof = await proofOfResidency(
-      root_,
+      mp.root,
       address, // || "0x483293fCB4C2EE29A02D74Ff98C976f9d85b1AAd", //Delete that lmao
       serverAddress,
       salt,
@@ -123,19 +92,19 @@ const Proofs = () => {
       creds.completedAtHex,
       creds.birthdateHex,
       newSecret,
-      leaf_,
-      path_,
-      indices_
+      mp.leaf,
+      mp.path,
+      mp.indices,
     );
     console.log(JSON.stringify(lob3Proof));
     setProof(lob3Proof);
-    // TODO: Call smart contracts
-    // contract.updateLeaf(oalProof)
-    // contract.proveResidence(lob3Proof)
+    // TODO: Set up calls to smart contracts
+    setContractInputs(null);
   }
 
   useEffect(() => {
-    async function init() {
+    if (!readyToLoadCreds) return;
+    async function getCreds() {
       // Delete this line:
       // const c = {birthdate: "1996-09-06", completedAt: "1969-06-09", countryCode: 0, newSecret: "0xb9d3ca1602fad29499f3ee47f729f875", secret: "0x89e0bc2174cb908298ce2f38987995a1", signature: "0x6440eb3b1871fa0e5ad052b81fb6cfe570b8ec74e753c45462778ef5f3302e17071cf538fa78d7c99a2c98e370f7d85ff82942364e8110f2960caf51819128c71b", subdivision: "CA"}
       // Replace with:
@@ -153,30 +122,28 @@ const Proofs = () => {
           "Could not retrieve credentials for proof. Please make sure you have the Holonym extension installed."
         );
       }
-      console.log("creds", c);
     }
-    init();
-  }, []);
+    getCreds();
+  }, [readyToLoadCreds]);
 
   useEffect(() => {
-    console.log("entered useEffect");
+    if (!address) return;
     if (!creds) return;
-    const proofType = params.proofType;
-    console.log(`proofType: ${proofType}`);
-    if (proofType === "us-residency") {
-      loadPoR();
-    } else if (proofType === "addLeaf") {
-      // addLeaf();
-    }
+    if (!(params.proofType in proofs)) return;
+    proofs[params.proofType].loadProof();
   }, [creds]);
 
+  useEffect(()=>{
+    if (address) setReadyToLoadCreds(true);
+  }, [address])
+
+  const ConnectWalletScreen = ()=><h1>Connect wlkanfksjn</h1>
   return (
     <Suspense fallback={<LoadingElement />}>
-      {
-        // true ? <><LoadingElement /><p>Currently, generating a proof may take 10-60s depending on your device</p></> :
         <div className="x-container w-container">
           <div className="x-wrapper small-center" style={{ width: "100vw" }}>
-            <h3>Make your Holo</h3>
+            {!address ? <ConnectWalletScreen /> : <>
+            <h3>Prove {proofs[params.proofType].name}</h3>
             <div>
               <div>
                 {error ? (
@@ -184,19 +151,18 @@ const Proofs = () => {
                 ) : (
                   <>
                     <p>
-                      When you see the popup, please confirm that you would like to
-                      share your credentials with this web page
+                      This will publicly link your wallet address to only this aspect of your identity: {proofs[params.proofType].name}. If you would like to do so, please confirm the popup.
                     </p>
-                    <button className="verification-button" onClick={addLeaf}>
-                      Mint Your Holo
+                    <button className="x-button" onClick={()=>setSubmissionConsent(true)}>
+                      {creds ? "Prove" : "Confirm"}
                     </button>
                   </>
                 )}
               </div>
             </div>
+            </>}
           </div>
         </div>
-      }
     </Suspense>
   );
 };
