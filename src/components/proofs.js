@@ -1,7 +1,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useParams } from "react-router-dom";
 import { ethers } from "ethers";
-import { useAccount, useSignMessage } from "wagmi";
+import { useAccount, useContractRead } from "wagmi";
 import { IncrementalMerkleTree } from "@zk-kit/incremental-merkle-tree";
 import { requestCredentials } from "../utils/secrets";
 import {
@@ -13,19 +13,41 @@ import {
   createLeaf,
   proofOfResidency,
 } from "../utils/proofs";
-import axios from "axios";
 import { serverAddress } from "../constants/misc";
+import ConnectWallet from "./atoms/ConnectWallet";
 
-function getMerkleProofParams(leaf) {
-  const leavesFromContract = []; // TODO: Get leaves from merkle tree smart contract
-  const leaves = [...leavesFromContract, leaf];
+
+const ConnectWalletScreen = () => (
+  <>
+    <ConnectWallet />
+    <div className="x-container w-container">
+          <div className="x-wrapper small-center" style={{ width: "100vw" }}>
+            <h1>Please Connect Your Wallet First</h1>
+          </div>
+    </div>
+  </>
+)
+async function getMerkleProofParams(leaf) {
+  const leaves = await (await fetch(`https://relayer.holonym.id/getLeaves`)).json();
+  if(leaves.indexOf(leaf) == -1){
+    console.error(`Could not find leaf ${leaf} from querying on-chain list of leaves ${leaves}`)
+  }
+
   const tree = new IncrementalMerkleTree(poseidonHashQuinary, 14, "0", 5);
   for (const item of leaves) {
     tree.insert(item);
   }
+  
   const index = tree.indexOf(leaf);
   const merkleProof = tree.createProof(index);
   const [root_, leaf_, path_, indices_] = serializeProof(merkleProof, poseidonHashQuinary); 
+  // console.log("returning", 
+  // {
+  //   root : root_,
+  //   leaf : leaf_,
+  //   path : path_,
+  //   indices : indices_
+  // })
   return {
     root : root_,
     leaf : leaf_,
@@ -46,8 +68,8 @@ const Proofs = () => {
   const [contractInputs, setContractInputs] = useState();
   const [submissionConsent, setSubmissionConsent] = useState(false);
   const [readyToLoadCreds, setReadyToLoadCreds] = useState();
-
-  const { address } = useAccount();
+  
+  const { data: account } = useAccount();
 
   const proofs = {
     "us-residency" : { name : "US Residency", loadProof : loadPoR },
@@ -55,6 +77,7 @@ const Proofs = () => {
   }
 
   async function loadPoR() {
+    console.log("loading us residency proof")
     const newSecret = creds.newSecret;
     const leaf = await createLeaf(
       serverAddress,
@@ -72,7 +95,7 @@ const Proofs = () => {
     //   setError("");
     // }
 
-    const mp = getMerkleProofParams(leaf);
+    const mp = await getMerkleProofParams(leaf);
 
     const salt =
       "18450029681611047275023442534946896643130395402313725026917000686233641593164"; // this number is poseidon("IsFromUS")
@@ -83,7 +106,7 @@ const Proofs = () => {
 
     const lob3Proof = await proofOfResidency(
       mp.root,
-      address, // || "0x483293fCB4C2EE29A02D74Ff98C976f9d85b1AAd", //Delete that lmao
+      account.address, // || "0x483293fCB4C2EE29A02D74Ff98C976f9d85b1AAd", //Delete that lmao
       serverAddress,
       salt,
       footprint,
@@ -105,9 +128,6 @@ const Proofs = () => {
   useEffect(() => {
     if (!readyToLoadCreds) return;
     async function getCreds() {
-      // Delete this line:
-      // const c = {birthdate: "1996-09-06", completedAt: "1969-06-09", countryCode: 0, newSecret: "0xb9d3ca1602fad29499f3ee47f729f875", secret: "0x89e0bc2174cb908298ce2f38987995a1", signature: "0x6440eb3b1871fa0e5ad052b81fb6cfe570b8ec74e753c45462778ef5f3302e17071cf538fa78d7c99a2c98e370f7d85ff82942364e8110f2960caf51819128c71b", subdivision: "CA"}
-      // Replace with:
       const c = await requestCredentials();
       console.log("creds", JSON.stringify(c));
       if (c) {
@@ -127,22 +147,21 @@ const Proofs = () => {
   }, [readyToLoadCreds]);
 
   useEffect(() => {
-    if (!address) return;
+    if (!(account?.address)) return;
     if (!creds) return;
     if (!(params.proofType in proofs)) return;
     proofs[params.proofType].loadProof();
   }, [creds]);
 
   useEffect(()=>{
-    if (address) setReadyToLoadCreds(true);
-  }, [address])
+    if (account?.address) setReadyToLoadCreds(true);
+  }, [account])
 
-  const ConnectWalletScreen = ()=><h1>Connect wlkanfksjn</h1>
   return (
     <Suspense fallback={<LoadingElement />}>
         <div className="x-container w-container">
           <div className="x-wrapper small-center" style={{ width: "100vw" }}>
-            {!address ? <ConnectWalletScreen /> : <>
+            {!(account?.address) ? <ConnectWalletScreen /> : <>
             <h3>Prove {proofs[params.proofType].name}</h3>
             <div>
               <div>
@@ -151,11 +170,15 @@ const Proofs = () => {
                 ) : (
                   <>
                     <p>
-                      This will publicly link your wallet address to only this aspect of your identity: {proofs[params.proofType].name}. If you would like to do so, please confirm the popup.
+                      {creds ? 
+                      `This will publicly link your wallet address to only this aspect of your identity: ${proofs[params.proofType].name}. If you would like to do so, please confirm the popup.`
+                        :
+                      `Please confirm the popup so your proof can be generated`
+                      }
+                      
                     </p>
-                    <button className="x-button" onClick={()=>setSubmissionConsent(true)}>
-                      {creds ? "Prove" : "Confirm"}
-                    </button>
+                    {creds ? <button className="x-button" onClick={()=>setSubmissionConsent(true)}>Prove</button>: null}
+                    
                   </>
                 )}
               </div>

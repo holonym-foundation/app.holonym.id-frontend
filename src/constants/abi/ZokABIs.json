@@ -35,6 +35,8 @@
       { "name": "root", "public": true, "type": "field" },
       { "name": "msgSenderAddr", "public": true, "type": "field" },
       { "name": "issuerAddr", "public": true, "type": "field" },
+      { "name": "salt", "public": true, "type": "field" },
+      { "name": "footprint", "public": true, "type": "field" },
       { "name": "countryCode", "public": true, "type": "field" },
       { "name": "subdivision", "public": false, "type": "field" },
       { "name": "completedAt", "public": false, "type": "field" },

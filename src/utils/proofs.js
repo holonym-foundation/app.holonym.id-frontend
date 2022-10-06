@@ -195,7 +195,6 @@ export function poseidonTwoInputs(input) {
     artifacts.poseidonTwoInputs,
     input
   );
-  console.log("output is 2", output);
   return output.replaceAll('"', "");
 }
 
@@ -218,7 +217,6 @@ export function poseidonHashQuinary(input) {
     artifacts.poseidonQuinary,
     input
   );
-  console.log("output is 3", output);
   return output.replaceAll('"', "");
 }
 
@@ -390,8 +388,10 @@ export async function proofOfResidency(
     root,
     ethers.BigNumber.from(sender).toString(),
     ethers.BigNumber.from(issuer).toString(),
+    salt,
+    footprint,
     ethers.BigNumber.from(countryCode).toString(),
-    ethers.BigNumber.from(new TextEncoder("utf-8").encode(subdivision)).toString(),
+    ethers.BigNumber.from(subdivision).toString(), //ethers.BigNumber.from(new TextEncoder("utf-8").encode(subdivision)).toString(),
     ethers.BigNumber.from(completedAt).toString(),
     ethers.BigNumber.from(birthdate).toString(),
     ethers.BigNumber.from(secret).toString(),
@@ -400,16 +400,47 @@ export async function proofOfResidency(
     indices,
   ];
 
+  // const testArgs = [
+  //   issuer,
+  //   secret,
+  //   countryCode,
+  //   subdivision,
+  //   completedAt,
+  //   birthdate
+  // ];
+  // const testLEaf = await createLeaf(
+  //   issuer,
+  //   secret,
+  //   countryCode,
+  //   subdivision,
+  //   completedAt,
+  //   birthdate
+  // );
+  // console.log("testLeaf is ", testLEaf, [
+  //   ethers.BigNumber.from(issuer).toString(),
+  //   ethers.BigNumber.from(secret).toString(),
+  //   ethers.BigNumber.from(countryCode).toString(),
+  //   ethers.BigNumber.from(new TextEncoder("utf-8").encode(subdivision)).toString(),
+  //   ethers.BigNumber.from(completedAt).toString(),
+  //   ethers.BigNumber.from(birthdate).toString(),
+  // ]);
+
   await loadArtifacts("proofOfResidency");
   await loadProvingKey("proofOfResidency");
-  console.log(
-    "PROVING KEY IS",
-    provingKeys.proofOfResidency.length,
-    provingKeys.proofOfResidency
-  );
+  // console.log(
+  //   "PROVING KEY IS",
+  //   provingKeys.proofOfResidency.length,
+  //   provingKeys.proofOfResidency
+  // );
+  // console.log(
+  //   "ARTIFACTS PROGRAM IS",
+  //   artifacts.proofOfResidency.program.length,
+  //   artifacts.proofOfResidency.program
+  // );
   // await loadVerifyingKey("proofOfResidency");
   // console.log("verifying keys 3 ", verifyingKeys);
   // console.log("provingKeys3", provingKeys)
+  console.log("ARGS ARE ", args, args.flat("5").join(" "))
   const { witness, output } = zokProvider.computeWitness(
     artifacts.proofOfResidency,
     args
