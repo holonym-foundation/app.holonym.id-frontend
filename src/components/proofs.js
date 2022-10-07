@@ -15,6 +15,8 @@ import {
 } from "../utils/proofs";
 import { serverAddress } from "../constants/misc";
 import ConnectWallet from "./atoms/ConnectWallet";
+import proofContractAddresses from "../constants/proofContractAddresses.json";
+import residencyStoreABI from "../constants/abi/zk-contracts/ResidencyStore.json"
 
 
 const ConnectWalletScreen = () => (
@@ -63,6 +65,15 @@ const Proofs = () => {
   const [readyToLoadCreds, setReadyToLoadCreds] = useState();
   
   const { data: account } = useAccount();
+
+  const submitProof = useContractWrite({
+    mode: "recklesslyUnprepared", // Preparing it here causes bugs i couldn't easily fix 
+    addressOrName: proofContractAddresses["optimistic-goerli"]["ResidencyStore"],
+    contractInterface: residencyStoreABI,
+    functionName: "prove",
+    args: [p.proof, p.inputs],
+    // enabled: (proof && submissionConsent),
+  })
 
   const proofs = {
     "us-residency" : { name : "US Residency", loadProof : loadPoR },
