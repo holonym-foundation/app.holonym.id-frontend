@@ -70,23 +70,6 @@ const Proofs = () => {
   
   const { data: account } = useAccount();
   
-  // const p = {"scheme":"g16","curve":"bn128","proof":{"a":["0x0394cdfb69e0bf0cd40b8af80745aa5290ed4ae05d564e018cbe277a74ce27f1","0x16201bf18d50f1777055c59288a41b0c7b479ae1198a92509f18bfb0f4821d52"],"b":[["0x06f568cbee90e8fd2fcc1298b2a0539de30861f8d0b720c7a2832ca23f000ef7","0x1c8ff884fa2cf0fc5c6be670817cf2be48ef8c4341d1daaab4b0d6225a88cf16"],["0x12eb028f9ed8f2a8288cfbdcd9ad2f6522f0f41d97aaf999031c6dd0a3ec6173","0x008b1a3ec12147bb8f757df6e6b2181c9914d6f63e005cb1e17bc10b721423ab"]],"c":["0x0bc5f67695ffe6bed2691a9f40bf7d599fca67662642223240780cbc6d1060b9","0x054fe806f25a21ad517b0dc0030a8d824bd39295305c527564e7ba11fd7e038e"]},"inputs":["0x18488055d4e1cc4a8d739751fd79b802448bcd83042fb3a17f88b1e7de4b0b21","0x000000000000000000000000b1d534a8836fb0d276a211653aeea41c6e11361e","0x0000000000000000000000008281316ac1d51c94f2de77575301cef615adea84","0x28ca58c3c1044c5277405071d5e3754aeaa4f91dae2c8647275f0b168ae4a94c","0x211b2f2ee8f97521aea073c7ec27425c3b16ee61ef77965990667e634ce52fed","0x0000000000000000000000000000000000000000000000000000000000000002"]};
-  // const { 
-  //   data: txResp,
-  //   isError,
-  //   isLoading,
-  //   reset,
-  //   writeAsync: submitIt
-  //  } = useContractWrite({
-  //   // mode: "recklesslyUnprepared", // Preparing it here causes bugs i couldn't easily fix 
-  //   addressOrName: proofContractAddresses["optimistic-goerli"]["ResidencyStore"],
-  //   contractInterface: residencyStoreABI
-  // },
-  //   "prove"
-  //   // args: [p.proof, p.inputs],
-  //   // enabled: (proof && submissionConsent),
-  // )
-
   const proofs = {
     "us-residency" : { name : "US Residency", loadProof : loadPoR, contractAddress: proofContractAddresses["optimistic-goerli"]["ResidencyStore"], contractABI: residencyStoreABI },
     "uniqueness" : { name : "US Residency", loadProof : ()=>null },
@@ -94,28 +77,15 @@ const Proofs = () => {
 
   async function loadPoR() {
     console.log("loading us residency proof")
-    const newSecret = creds.newSecret;
-    const leaf = await createLeaf(
-      serverAddress,
-      newSecret,
-      creds.countryCode,
-      creds.subdivisionHex,
-      creds.completedAtHex,
-      creds.birthdateHex
-    );
 
-    const mp = await getMerkleProofParams(leaf);
-
-    const salt =
-      "18450029681611047275023442534946896643130395402313725026917000686233641593164"; // this number is poseidon("IsFromUS")
+    const salt = "18450029681611047275023442534946896643130395402313725026917000686233641593164"; // this number is poseidon("IsFromUS")
     const footprint = await poseidonTwoInputs([
       salt,
-      ethers.BigNumber.from(newSecret).toString(),
+      ethers.BigNumber.from(creds.newSecret).toString(),
     ]);
 
     const por = await proofOfResidency(
-      mp.root,
-      account.address, // || "0x483293fCB4C2EE29A02D74Ff98C976f9d85b1AAd", //Delete that lmao
+      account.address,
       serverAddress,
       salt,
       footprint,
@@ -123,12 +93,8 @@ const Proofs = () => {
       creds.subdivisionHex,
       creds.completedAtHex,
       creds.birthdateHex,
-      newSecret,
-      mp.leaf,
-      mp.path,
-      mp.indices,
+      creds.newSecret,
     );
-
     setProof(por);
   }
 
@@ -203,15 +169,12 @@ const Proofs = () => {
     } catch (e) {
       setError(e.reason);
     }
-    
-    // DElete this lines
-    // setProof({"scheme":"g16","curve":"bn128","proof":{"a":["0x24ad59fcbd9a5218b145db8ab52a46584601e862cc4ece36313e0ecf25d029e4","0x1f5e2de28ed755248d8b9090fba4995b0f68dab97db1880ea1129fc25d75200d"],"b":[["0x0e9768ff8dbcba99fc82e24f25f174bd1d59195a29dbee13ee1d19e80eb0494c","0x0785e66582b727b39402df0679601016f984618b8167962e2963e32e7eb88178"],["0x1ec2ae548cb7328c8178ab287af94cdacfb911d751c569c889a69a22862d3522","0x01f7b95371344db09b9339f856cd5735b3000ab553cc850f454eef91a945f8f8"]],"c":["0x02712ccce3fecd039831bb8ffe34f04631b58c253125f78660e25ae0b454e188","0x17b1a977f4d523b7a1f8ae15e11e64605265c35024f305888c43f4b473a5b6e1"]},"inputs":["0x18488055d4e1cc4a8d739751fd79b802448bcd83042fb3a17f88b1e7de4b0b21","0x000000000000000000000000c8834c1fcf0df6623fc8c8ed25064a4148d99388","0x0000000000000000000000008281316ac1d51c94f2de77575301cef615adea84","0x28ca58c3c1044c5277405071d5e3754aeaa4f91dae2c8647275f0b168ae4a94c","0x211b2f2ee8f97521aea073c7ec27425c3b16ee61ef77965990667e634ce52fed","0x0000000000000000000000000000000000000000000000000000000000000002"]})
-    // setCreds("a")
-    // setSubmissionConsent(true)
   }
+
   if(success){
     return <Success title="Success" />
   }
+
   return (
     // <Suspense fallback={<LoadingElement />}>
         <div className="x-container w-container">

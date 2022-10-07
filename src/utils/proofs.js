@@ -389,7 +389,6 @@ export async function onAddLeafProof(
  * @param {Array<string>} indices Numbers represented as strings
  */
 export async function proofOfResidency(
-  root,
   sender,
   issuer,
   salt,
@@ -399,17 +398,27 @@ export async function proofOfResidency(
   completedAt,
   birthdate,
   secret,
-  leaf,
-  path,
-  indices
-) {
+ ) {
   if (!zokProvider) {
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     // TODO: Make this more sophisticated. Wait for zokProvider to be set or for timeout (e.g., 10s)
     await sleep(5000);
   }
+  
+  
+  const leaf = await createLeaf(
+    serverAddress,
+    secret,
+    countryCode,
+    subdivision,
+    completedAt,
+    birthdate
+  );
+
+  const mp = await getMerkleProofParams(leaf);
+
   const args = [
-    root,
+    mp.root,
     ethers.BigNumber.from(sender).toString(),
     ethers.BigNumber.from(issuer).toString(),
     salt,
@@ -420,8 +429,8 @@ export async function proofOfResidency(
     ethers.BigNumber.from(birthdate).toString(),
     ethers.BigNumber.from(secret).toString(),
     leaf,
-    path,
-    indices,
+    mp.path,
+    mp.indices,
   ];
 
   await loadArtifacts("proofOfResidency");
