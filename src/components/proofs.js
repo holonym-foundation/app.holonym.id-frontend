@@ -1,7 +1,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useParams } from "react-router-dom";
 import { ethers } from "ethers";
-import { useAccount, useContractRead } from "wagmi";
+import { useAccount, useContractWrite } from "wagmi";
 import { IncrementalMerkleTree } from "@zk-kit/incremental-merkle-tree";
 import { requestCredentials } from "../utils/secrets";
 import {
@@ -41,13 +41,7 @@ async function getMerkleProofParams(leaf) {
   const index = tree.indexOf(leaf);
   const merkleProof = tree.createProof(index);
   const [root_, leaf_, path_, indices_] = serializeProof(merkleProof, poseidonHashQuinary); 
-  // console.log("returning", 
-  // {
-  //   root : root_,
-  //   leaf : leaf_,
-  //   path : path_,
-  //   indices : indices_
-  // })
+
   return {
     root : root_,
     leaf : leaf_,
@@ -65,7 +59,6 @@ const Proofs = () => {
   const [creds, setCreds] = useState();
   const [error, setError] = useState();
   const [proof, setProof] = useState();
-  const [contractInputs, setContractInputs] = useState();
   const [submissionConsent, setSubmissionConsent] = useState(false);
   const [readyToLoadCreds, setReadyToLoadCreds] = useState();
   
@@ -122,7 +115,6 @@ const Proofs = () => {
     console.log(JSON.stringify(lob3Proof));
     setProof(lob3Proof);
     // TODO: Set up calls to smart contracts
-    setContractInputs(null);
   }
 
   useEffect(() => {
