@@ -7,7 +7,7 @@ If you have priviliges to commit to master, please add this to .git/hooks/pre-co
 
 branch="$(git rev-parse --abbrev-ref HEAD)"
 
-if [ "$branch" = "master" ]; then
+if [ "$branch" = "main" ]; then
   echo "\x1B[1;31mWARNING: YOU'RE ATTEMPTING TO COMMIT TO THE MASTER\033[0m Are you sure you want to do this? Have you done the following four items:
 	  * Gone through every page you changed at tested that it looks good on all browser sizes, multiple browsers, and mobile?
 	  * Manually tested wallet UX flows on a browser with a connected wallet, disconnect wallet, incognito and mobile?
