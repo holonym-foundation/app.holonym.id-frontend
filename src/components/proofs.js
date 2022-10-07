@@ -7,9 +7,8 @@ import { requestCredentials } from "../utils/secrets";
 import {
   getStateAsHexString,
   getDateAsHexString,
-  serializeProof,
+  getMerkleProofParams,
   poseidonTwoInputs,
-  poseidonHashQuinary,
   createLeaf,
   proofOfResidency,
 } from "../utils/proofs";
@@ -55,28 +54,6 @@ const LoadingProofsButton = (props) => (
 </div>
 </button> 
 )
-async function getMerkleProofParams(leaf) {
-  const leaves = await (await fetch(`https://relayer.holonym.id/getLeaves`)).json();
-  if(leaves.indexOf(leaf) == -1){
-    console.error(`Could not find leaf ${leaf} from querying on-chain list of leaves ${leaves}`)
-  }
-
-  const tree = new IncrementalMerkleTree(poseidonHashQuinary, 14, "0", 5);
-  for (const item of leaves) {
-    tree.insert(item);
-  }
-  
-  const index = tree.indexOf(leaf);
-  const merkleProof = tree.createProof(index);
-  const [root_, leaf_, path_, indices_] = serializeProof(merkleProof, poseidonHashQuinary); 
-
-  return {
-    root : root_,
-    leaf : leaf_,
-    path : path_,
-    indices : indices_
-  }
-}
 
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -111,7 +88,7 @@ const Proofs = () => {
   // )
 
   const proofs = {
-    "us-residency" : { name : "US Residency", loadProof : loadPoR },
+    "us-residency" : { name : "US Residency", loadProof : loadPoR, contractAddress: proofContractAddresses["optimistic-goerli"]["ResidencyStore"], contractABI: residencyStoreABI },
     "uniqueness" : { name : "US Residency", loadProof : ()=>null },
   }
 
@@ -127,13 +104,6 @@ const Proofs = () => {
       creds.birthdateHex
     );
 
-    // if(!address) {
-    //   setError("Please connect your wallet");
-    //   await sleep(1000);
-    // } else if(error == "Please connect your wallet") {
-    //   setError("");
-    // }
-
     const mp = await getMerkleProofParams(leaf);
 
     const salt =
@@ -143,7 +113,7 @@ const Proofs = () => {
       ethers.BigNumber.from(newSecret).toString(),
     ]);
 
-    const lob3Proof = await proofOfResidency(
+    const por = await proofOfResidency(
       mp.root,
       account.address, // || "0x483293fCB4C2EE29A02D74Ff98C976f9d85b1AAd", //Delete that lmao
       serverAddress,
@@ -158,9 +128,8 @@ const Proofs = () => {
       mp.path,
       mp.indices,
     );
-    console.log(JSON.stringify(lob3Proof));
-    setProof(lob3Proof);
-    // TODO: Set up calls to smart contracts
+
+    setProof(por);
   }
 
   useEffect(() => {
@@ -197,7 +166,7 @@ const Proofs = () => {
 
   useEffect(()=>{
     if(!(submissionConsent && creds && proof)) return;
-    submitTx()
+    submitTx(proofs[params.proofType].contractAddress, proofs[params.proofType].contractABI);
   }, [proof, submissionConsent])
 
   if(account && !window.ethereum) {
@@ -206,7 +175,7 @@ const Proofs = () => {
   }
   
   
-  async function submitTx() {
+  async function submitTx(addr, abi) {
     window.ethereum.request({
       method: "wallet_addEthereumChain",
       params: [{
@@ -224,7 +193,7 @@ const Proofs = () => {
   
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
-    const resStore = new ethers.Contract(proofContractAddresses["optimistic-goerli"]["ResidencyStore"], residencyStoreABI, signer);
+    const resStore = new ethers.Contract(addr, abi, signer);
     try {
       const result = await resStore.prove(
         Object.keys(proof.proof).map(k=>proof.proof[k]), // Convert struct to ethers format 

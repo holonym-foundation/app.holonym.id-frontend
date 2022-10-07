@@ -153,6 +153,30 @@ function isLeapYear(year) {
   return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
 }
 
+/* Gets on-chain leaves and creates Merkle proof */
+export async function getMerkleProofParams(leaf) {
+  const leaves = await (await fetch(`https://relayer.holonym.id/getLeaves`)).json();
+  if(leaves.indexOf(leaf) == -1){
+    console.error(`Could not find leaf ${leaf} from querying on-chain list of leaves ${leaves}`)
+  }
+
+  const tree = new IncrementalMerkleTree(poseidonHashQuinary, 14, "0", 5);
+  for (const item of leaves) {
+    tree.insert(item);
+  }
+  
+  const index = tree.indexOf(leaf);
+  const merkleProof = tree.createProof(index);
+  const [root_, leaf_, path_, indices_] = serializeProof(merkleProof, poseidonHashQuinary); 
+
+  return {
+    root : root_,
+    leaf : leaf_,
+    path : path_,
+    indices : indices_
+  }
+}
+
 /**
  * (Forked from holo-merkle-utils)
  * Serializes createProof outputs to ZoKrates format
