@@ -2,7 +2,6 @@
  * Helpers for interacting with Holonym browser extension and for zokrates
  */
 
-console.log(process.env.REACT_APP_EXTENSION_ID, process.env);
 let extensionId;
 if (!process.env.NODE_ENV || process.env.NODE_ENV === "development") {
   extensionId =
@@ -98,6 +97,7 @@ export function getIsHoloRegistered() {
     const callback = (resp) => resolve(resp.isRegistered);
     // eslint-disable-next-line no-undef
     chrome.runtime.sendMessage(extensionId, payload, callback);
+    console.log("sent to", extensionId);
   });
 }
 
