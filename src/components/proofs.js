@@ -18,6 +18,7 @@ import ConnectWallet from "./atoms/ConnectWallet";
 import proofContractAddresses from "../constants/proofContractAddresses.json";
 import residencyStoreABI from "../constants/abi/zk-contracts/ResidencyStoreSmall.json"
 import { Success } from "./success";
+import { LineWave } from "react-loader-spinner";
 
 
 const ConnectWalletScreen = () => (
@@ -29,6 +30,30 @@ const ConnectWalletScreen = () => (
           </div>
     </div>
   </>
+)
+
+const LoadingProofsButton = (props) => (
+  <button className="x-button" style={{height: "85px"}} onClick={props.onClick}>
+    <div style={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+  }}>
+  Proof Loading
+  <LineWave
+  height="50"
+  width="50"
+  color="#01010c"
+  ariaLabel="line-wave"
+  wrapperStyle={{}}
+  wrapperClass="blocks-wrapper"
+  visible={true}
+  firstLineColor=""
+  middleLineColor=""
+  lastLineColor=""
+  />
+</div>
+</button> 
 )
 async function getMerkleProofParams(leaf) {
   const leaves = await (await fetch(`https://relayer.holonym.id/getLeaves`)).json();
@@ -232,13 +257,17 @@ const Proofs = () => {
                   <>
                     <p>
                       {creds ? 
-                      `This will publicly link your wallet address to only this aspect of your identity: ${proofs[params.proofType].name}. If you would like to do so, please confirm the popup.`
+                      `Press prove to publicly link your wallet address to only this part of your identity: ${proofs[params.proofType].name}. The proof may take up to 15 seconds to load`
                         :
                       `Please confirm the popup so your proof can be generated`
                       }
                       
                     </p>
-                    {creds ? <button className="x-button" onClick={()=>setSubmissionConsent(true)}>{(creds && !proof) ? "Loading Proof (this may take a while)..." : "Prove"}</button>: null}                    
+                    {creds ? 
+                      (proof ? <button className="x-button" onClick={()=>setSubmissionConsent(true)}>Submit proof</button> : <LoadingProofsButton />) 
+                      : 
+                      ""
+                    }                    
                   </>
                 )}
               </div>
