@@ -14,7 +14,7 @@ import {
   getDateAsHexString,
   onAddLeafProof,
 } from "../utils/proofs";
-import { Success } from "./verified-final-screen";
+import { Success } from "./success";
 
 // For test credentials, see id-server/src/main/utils/constants.js
 const dummyUserCreds = {

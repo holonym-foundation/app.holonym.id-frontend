@@ -8,6 +8,7 @@ import "./webflow.css";
 // import { Lookup } from "./components/lookup.js";
 // import Verify from "./components/verify";
 import Verified from "./components/verified";
+import Proofs from "./components/proofs"
 import ProofMenu from "./components/proof-menu";
 import React, { useEffect } from "react";
 import WebFont from "webfontloader";
@@ -25,7 +26,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 // } from "./components/chain-switcher";
 // import Error from "./components/errors.js";
 
-const Proofs = React.lazy(() => import("./components/proofs"));
+// const Proofs = React.lazy(() => import("./components/proofs"));
 
 function App() {
   // const { desiredChain, setDesiredChain } = useDesiredChain();

@@ -14,7 +14,7 @@ export const Success = (props) => {
     <div className="x-section product wf-section">
       <div className="x-container product w-container">
         <div className="x-pre-wrapper">
-        <h1 className="h1">Minting Success</h1>
+        <h1 className="h1">{props.title || "Minting Success"}</h1>
           {/* <div className="card-heading"> */}
                       
                       {/* <h3 className="h3 no-margin">You are free to submit some proofs in the browser extension or return home</h3> */}
@@ -30,7 +30,7 @@ export const Success = (props) => {
                 <div className="spacer-large"></div>
                 
                 <a onClick={()=>navigate("/")} className="x-button secondary">
-                  Go back
+                  Go home
                 </a>
 
                 <div className="spacer-x-small"></div>

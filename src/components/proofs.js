@@ -17,6 +17,7 @@ import { serverAddress } from "../constants/misc";
 import ConnectWallet from "./atoms/ConnectWallet";
 import proofContractAddresses from "../constants/proofContractAddresses.json";
 import residencyStoreABI from "../constants/abi/zk-contracts/ResidencyStoreSmall.json"
+import { Success } from "./success";
 
 
 const ConnectWalletScreen = () => (
@@ -59,6 +60,7 @@ const LoadingElement = (props) => <h3 style={{ textAlign: "center" }}>Loading...
 const Proofs = () => {
   const params = useParams();
   const [creds, setCreds] = useState();
+  const [success, setSuccess] = useState();
   const [error, setError] = useState();
   const [proof, setProof] = useState();
   const [submissionConsent, setSubmissionConsent] = useState(false);
@@ -179,7 +181,7 @@ const Proofs = () => {
   }
   
   
-  function submitTx() {
+  async function submitTx() {
     window.ethereum.request({
       method: "wallet_addEthereumChain",
       params: [{
@@ -196,18 +198,28 @@ const Proofs = () => {
     });
   
     const provider = new ethers.providers.Web3Provider(window.ethereum);
-    provider.send('eth_requestAccounts', []).then(()=>{
-      const signer = provider.getSigner();
-      const resStore = new ethers.Contract(proofContractAddresses["optimistic-goerli"]["ResidencyStore"], residencyStoreABI, signer);
-      resStore.prove(
+    const signer = provider.getSigner();
+    const resStore = new ethers.Contract(proofContractAddresses["optimistic-goerli"]["ResidencyStore"], residencyStoreABI, signer);
+    try {
+      const result = await resStore.prove(
         Object.keys(proof.proof).map(k=>proof.proof[k]), // Convert struct to ethers format 
         proof.inputs
-        );
-    })
+      )
+      setSuccess(true);
+    } catch (e) {
+      setError(e.reason);
+    }
+    
+    // DElete this lines
+    // setProof({"scheme":"g16","curve":"bn128","proof":{"a":["0x24ad59fcbd9a5218b145db8ab52a46584601e862cc4ece36313e0ecf25d029e4","0x1f5e2de28ed755248d8b9090fba4995b0f68dab97db1880ea1129fc25d75200d"],"b":[["0x0e9768ff8dbcba99fc82e24f25f174bd1d59195a29dbee13ee1d19e80eb0494c","0x0785e66582b727b39402df0679601016f984618b8167962e2963e32e7eb88178"],["0x1ec2ae548cb7328c8178ab287af94cdacfb911d751c569c889a69a22862d3522","0x01f7b95371344db09b9339f856cd5735b3000ab553cc850f454eef91a945f8f8"]],"c":["0x02712ccce3fecd039831bb8ffe34f04631b58c253125f78660e25ae0b454e188","0x17b1a977f4d523b7a1f8ae15e11e64605265c35024f305888c43f4b473a5b6e1"]},"inputs":["0x18488055d4e1cc4a8d739751fd79b802448bcd83042fb3a17f88b1e7de4b0b21","0x000000000000000000000000c8834c1fcf0df6623fc8c8ed25064a4148d99388","0x0000000000000000000000008281316ac1d51c94f2de77575301cef615adea84","0x28ca58c3c1044c5277405071d5e3754aeaa4f91dae2c8647275f0b168ae4a94c","0x211b2f2ee8f97521aea073c7ec27425c3b16ee61ef77965990667e634ce52fed","0x0000000000000000000000000000000000000000000000000000000000000002"]})
+    // setCreds("a")
+    // setSubmissionConsent(true)
   }
-
+  if(success){
+    return <Success title="Success" />
+  }
   return (
-    <Suspense fallback={<LoadingElement />}>
+    // <Suspense fallback={<LoadingElement />}>
         <div className="x-container w-container">
           <div className="x-wrapper small-center" style={{ width: "100vw" }}>
             {!(account?.address) ? <ConnectWalletScreen /> : <>
@@ -226,8 +238,7 @@ const Proofs = () => {
                       }
                       
                     </p>
-                    {creds ? <button className="x-button" onClick={()=>setSubmissionConsent(true)}>Prove</button>: null}
-                    
+                    {creds ? <button className="x-button" onClick={()=>setSubmissionConsent(true)}>{(creds && !proof) ? "Loading Proof (this may take a while)..." : "Prove"}</button>: null}                    
                   </>
                 )}
               </div>
@@ -235,7 +246,7 @@ const Proofs = () => {
             </>}
           </div>
         </div>
-    </Suspense>
+    // </Suspense>
   );
 };
 
