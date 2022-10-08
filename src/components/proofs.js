@@ -1,8 +1,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useParams } from "react-router-dom";
 import { ethers } from "ethers";
-import { useAccount, useContractWrite } from "wagmi";
-import { IncrementalMerkleTree } from "@zk-kit/incremental-merkle-tree";
+import { useAccount } from "wagmi";
 import { requestCredentials } from "../utils/secrets";
 import {
   getStateAsHexString,
@@ -18,7 +17,7 @@ import residencyStoreABI from "../constants/abi/zk-contracts/ResidencyStore.json
 import antiSybilStoreABI from "../constants/abi/zk-contracts/AntiSybilStore.json";
 
 import { Success } from "./success";
-import { LineWave } from "react-loader-spinner";
+import { Oval } from "react-loader-spinner";
 
 
 const ConnectWalletScreen = () => (
@@ -33,25 +32,26 @@ const ConnectWalletScreen = () => (
 )
 
 const LoadingProofsButton = (props) => (
-  <button className="x-button" style={{height: "85px"}} onClick={props.onClick}>
+  <button className="x-button" onClick={props.onClick}>
     <div style={{
       display: "flex",
       justifyContent: "center",
       alignItems: "center",
   }}>
-  Proof Loading
-  <LineWave
-  height="50"
-  width="50"
-  color="#01010c"
-  ariaLabel="line-wave"
-  wrapperStyle={{}}
-  wrapperClass="blocks-wrapper"
+  Proof Loading 
+  <Oval
+  height={10}
+  width={10}
+  color="#464646"
+  wrapperStyle={{marginLeft:"5px"}}
+  wrapperClass=""
   visible={true}
-  firstLineColor=""
-  middleLineColor=""
-  lastLineColor=""
-  />
+  ariaLabel='oval-loading'
+  secondaryColor="#01010c"
+  strokeWidth={2}
+  strokeWidthSecondary={2}
+
+/>
 </div>
 </button> 
 )
