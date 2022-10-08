@@ -450,6 +450,79 @@ export async function proofOfResidency(
 }
 
 /**
+ * @param {string} issuer Hex string
+ * @param {string} secret Hex string representing 16 bytes
+ * @param {string} salt Hex string representing 16 bytes
+ * @param {string} footprint Hex string representing 16 bytes
+ * @param {number} countryCode
+ * @param {string} subdivision UTF-8
+ * @param {string} completedAt Hex string representing 3 bytes
+ * @param {string} birthdate Hex string representing 3 bytes
+ * @param {Array<Array<string>>} path Numbers represented as strings
+ * @param {Array<string>} indices Numbers represented as strings
+ */
+ export async function antiSybil(
+  sender,
+  issuer,
+  salt,
+  footprint,
+  countryCode,
+  subdivision,
+  completedAt,
+  birthdate,
+  secret,
+ ) {
+  if (!zokProvider) {
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    // TODO: Make this more sophisticated. Wait for zokProvider to be set or for timeout (e.g., 10s)
+    await sleep(5000);
+  }
+  
+  
+  const leaf = await createLeaf(
+    serverAddress,
+    secret,
+    countryCode,
+    subdivision,
+    completedAt,
+    birthdate
+  );
+
+  const mp = await getMerkleProofParams(leaf);
+
+  const args = [
+    mp.root,
+    ethers.BigNumber.from(sender).toString(),
+    ethers.BigNumber.from(issuer).toString(),
+    salt,
+    footprint,
+    ethers.BigNumber.from(countryCode).toString(),
+    ethers.BigNumber.from(subdivision).toString(), //ethers.BigNumber.from(new TextEncoder("utf-8").encode(subdivision)).toString(),
+    ethers.BigNumber.from(completedAt).toString(),
+    ethers.BigNumber.from(birthdate).toString(),
+    ethers.BigNumber.from(secret).toString(),
+    leaf,
+    mp.path,
+    mp.indices,
+  ];
+
+  await loadArtifacts("antiSybil");
+  await loadProvingKey("antiSybil");
+
+  const { witness, output } = zokProvider.computeWitness(
+    artifacts.antiSybil,
+    args
+  );
+
+  const proof = zokProvider.generateProof(
+    artifacts.antiSybil.program,
+    witness,
+    provingKeys.antiSybil
+  );
+  return proof;
+}
+
+/**
  * ---------------------------------------------------------------------------------
  * BEGIN test functions
  * ---------------------------------------------------------------------------------

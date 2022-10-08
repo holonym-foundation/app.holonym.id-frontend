@@ -62,6 +62,38 @@
     ],
     "output": { "type": "tuple", "components": { "elements": [] } }
   },
+  "antiSybil": {
+    "inputs": [
+      { "name": "root", "public": true, "type": "field" },
+      { "name": "msgSenderAddr", "public": true, "type": "field" },
+      { "name": "issuerAddr", "public": true, "type": "field" },
+      { "name": "salt", "public": true, "type": "field" },
+      { "name": "footprint", "public": true, "type": "field" },
+      { "name": "countryCode", "public": false, "type": "field" },
+      { "name": "subdivision", "public": false, "type": "field" },
+      { "name": "completedAt", "public": false, "type": "field" },
+      { "name": "birthdate", "public": false, "type": "field" },
+      { "name": "nullifier", "public": false, "type": "field" },
+      { "name": "leaf", "public": false, "type": "field" },
+      {
+        "name": "path",
+        "public": false,
+        "type": "array",
+        "components": {
+          "size": 14,
+          "type": "array",
+          "components": { "size": 5, "type": "field" }
+        }
+      },
+      {
+        "name": "indices",
+        "public": false,
+        "type": "array",
+        "components": { "size": 14, "type": "u32" }
+      }
+    ],
+    "output": { "type": "tuple", "components": { "elements": [] } }
+  },
   "createLeaf": {
     "inputs": [
       { "name": "address", "public": true, "type": "field" },

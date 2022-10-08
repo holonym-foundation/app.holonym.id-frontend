@@ -7,15 +7,16 @@ import { requestCredentials } from "../utils/secrets";
 import {
   getStateAsHexString,
   getDateAsHexString,
-  getMerkleProofParams,
   poseidonTwoInputs,
-  createLeaf,
   proofOfResidency,
+  antiSybil,
 } from "../utils/proofs";
 import { serverAddress } from "../constants/misc";
 import ConnectWallet from "./atoms/ConnectWallet";
 import proofContractAddresses from "../constants/proofContractAddresses.json";
-import residencyStoreABI from "../constants/abi/zk-contracts/ResidencyStoreSmall.json"
+import residencyStoreABI from "../constants/abi/zk-contracts/ResidencyStore.json";
+import antiSybilStoreABI from "../constants/abi/zk-contracts/AntiSybilStore.json";
+
 import { Success } from "./success";
 import { LineWave } from "react-loader-spinner";
 
@@ -72,12 +73,10 @@ const Proofs = () => {
   
   const proofs = {
     "us-residency" : { name : "US Residency", loadProof : loadPoR, contractAddress: proofContractAddresses["optimistic-goerli"]["ResidencyStore"], contractABI: residencyStoreABI },
-    "uniqueness" : { name : "US Residency", loadProof : ()=>null },
+    "uniqueness" : { name : "Uniqueness", loadProof : loadAntiSybil, contractAddress: proofContractAddresses["optimistic-goerli"]["AntiSybilStore"], contractABI: antiSybilStoreABI },
   }
 
   async function loadPoR() {
-    console.log("loading us residency proof")
-
     const salt = "18450029681611047275023442534946896643130395402313725026917000686233641593164"; // this number is poseidon("IsFromUS")
     const footprint = await poseidonTwoInputs([
       salt,
@@ -96,6 +95,29 @@ const Proofs = () => {
       creds.newSecret,
     );
     setProof(por);
+  }
+
+
+  async function loadAntiSybil() {
+    const salt = "123456789"; // this number is poseidon("IsFromUS")
+    const footprint = await poseidonTwoInputs([
+      salt,
+      ethers.BigNumber.from(creds.newSecret).toString(),
+    ]);
+
+    const as = await antiSybil(
+      account.address,
+      serverAddress,
+      salt,
+      footprint,
+      creds.countryCode,
+      creds.subdivisionHex,
+      creds.completedAtHex,
+      creds.birthdateHex,
+      creds.newSecret,
+    );
+    setProof(as);
+    console.log("proof is", JSON.stringify(as))
   }
 
   useEffect(() => {
@@ -142,6 +164,7 @@ const Proofs = () => {
   
   
   async function submitTx(addr, abi) {
+    console.log("submitting");
     window.ethereum.request({
       method: "wallet_addEthereumChain",
       params: [{
@@ -189,7 +212,7 @@ const Proofs = () => {
                   <>
                     <p>
                       {creds ? 
-                      `Press prove to publicly link your wallet address to only this part of your identity: ${proofs[params.proofType].name}. The proof may take up to 15 seconds to load`
+                      `Submitting will publicly link your wallet address to only this part of your identity: ${proofs[params.proofType].name}. The proof may take up to 15 seconds to load`
                         :
                       `Please confirm the popup so your proof can be generated`
                       }
