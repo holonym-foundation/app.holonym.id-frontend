@@ -99,16 +99,18 @@ const Proofs = () => {
 
 
   async function loadAntiSybil() {
-    const salt = "123456789"; // this number is poseidon("IsFromUS")
+    const actionId = params.actionId || "123456789";
+    if(!params.actionId) console.error("Warning: no actionId was given, using default of 123456789 (generic cross-action sybil resistance)")
+    console.log("actionId", actionId)
     const footprint = await poseidonTwoInputs([
-      salt,
+      actionId,
       ethers.BigNumber.from(creds.newSecret).toString(),
     ]);
-
+    console.log("footprint", footprint)
     const as = await antiSybil(
       account.address,
       serverAddress,
-      salt,
+      actionId,
       footprint,
       creds.countryCode,
       creds.subdivisionHex,
@@ -195,6 +197,7 @@ const Proofs = () => {
   }
 
   if(success){
+    if(params.callback) window.open("https://" + params.callback, "_blank");
     return <Success title="Success" />
   }
 

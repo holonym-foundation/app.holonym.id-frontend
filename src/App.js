@@ -125,9 +125,12 @@ function App() {
           <Route path={"/verified/:jobID"} element={<Verified />} />
           {/* <Route path={"/zk-id/verified"} element={<Verified />} /> */}
           <Route exact path={"/prove"} element={<ProofMenu />} />
-          <Route path={"/prove/:proofType"} element={<Proofs />} />
+          {/* For when there are actionIds and callbacks (right now, this feature is used by the uniqueness proof) */}
+          <Route exact path={"/prove/:proofType/:actionId/:callback"} element={<Proofs />} />
+          <Route exact path={"/prove/:proofType/:actionId"} element={<Proofs />} />
+          <Route exact path={"/prove/:proofType"} element={<Proofs />} />
           {/* Backwards compatability path: */}
-          <Route path={"/zk-id/proofs/:proofType"} element={<Proofs />} />
+          {/* <Route path={"/zk-id/proofs/:proofType"} element={<Proofs />} /> */}
           {/* <Route path={"/chainswitchertest"} element={<ChainSwitcher />} /> */}
           {/* <Route path={"/chainswitchermodaltest"} element={<ChainSwitcherModal />} /> */}
         </Routes>
