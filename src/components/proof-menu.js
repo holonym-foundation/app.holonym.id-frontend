@@ -15,9 +15,9 @@ const Welcome = ()=>{
                     />
                 </div>
                 <div className="spacer-large"></div>
-                <button disabled onClick={()=>navigate("/zk-id/proofs/us-resident")} className="x-button">US Residency</button>
+                <button onClick={()=>navigate("/prove/us-residency")} className="x-button">US Residency</button>
                 <div className="spacer-large"></div>
-                <button disabled onClick={()=>navigate("/")} className="x-button">Unique Personhood</button>
+                <button onClick={()=>navigate("/prove/uniqueness")} className="x-button">Unique Personhood</button>
                 <div className="spacer-large"></div>
                 {/* <button disabled onClick={()=>navigate("/")} className="x-button secondary">More proofs coming soon</button> */}
 

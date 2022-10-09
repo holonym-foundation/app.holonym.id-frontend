@@ -1,21 +1,61 @@
 import { useState, useEffect, Suspense } from "react";
 import { useParams } from "react-router-dom";
 import { ethers } from "ethers";
-import { useAccount, useSignMessage } from "wagmi";
-import { IncrementalMerkleTree } from "@zk-kit/incremental-merkle-tree";
+import { useAccount } from "wagmi";
 import { requestCredentials } from "../utils/secrets";
 import {
   getStateAsHexString,
   getDateAsHexString,
-  serializeProof,
   poseidonTwoInputs,
-  poseidonHashQuinary,
-  createLeaf,
-  onAddLeafProof,
   proofOfResidency,
+  antiSybil,
 } from "../utils/proofs";
-import axios from "axios";
 import { serverAddress } from "../constants/misc";
+import ConnectWallet from "./atoms/ConnectWallet";
+import proofContractAddresses from "../constants/proofContractAddresses.json";
+import residencyStoreABI from "../constants/abi/zk-contracts/ResidencyStore.json";
+import antiSybilStoreABI from "../constants/abi/zk-contracts/AntiSybilStore.json";
+
+import { Success } from "./success";
+import { Oval } from "react-loader-spinner";
+
+
+const ConnectWalletScreen = () => (
+  <>
+    <ConnectWallet />
+    <div className="x-container w-container">
+          <div className="x-wrapper small-center" style={{ width: "100vw" }}>
+            <h1>Please Connect Your Wallet First</h1>
+          </div>
+    </div>
+  </>
+)
+
+const LoadingProofsButton = (props) => (
+  <button className="x-button" onClick={props.onClick}>
+    <div style={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+  }}>
+  Proof Loading 
+  <Oval
+  height={10}
+  width={10}
+  color="#464646"
+  wrapperStyle={{marginLeft:"5px"}}
+  wrapperClass=""
+  visible={true}
+  ariaLabel='oval-loading'
+  secondaryColor="#01010c"
+  strokeWidth={2}
+  strokeWidthSecondary={2}
+
+/>
+</div>
+</button> 
+)
+
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -23,98 +63,28 @@ const LoadingElement = (props) => <h3 style={{ textAlign: "center" }}>Loading...
 const Proofs = () => {
   const params = useParams();
   const [creds, setCreds] = useState();
+  const [success, setSuccess] = useState();
   const [error, setError] = useState();
   const [proof, setProof] = useState();
-  const { address } = useAccount();
-
-  async function addLeaf() {
-    // onAddLeafProof
-    const oldSecret = creds.secret;
-    const newSecret = creds.newSecret;
-    const oalProof = await onAddLeafProof(
-      serverAddress,
-      creds.countryCode,
-      creds.subdivisionHex,
-      creds.completedAtHex,
-      creds.birthdateHex,
-      oldSecret,
-      newSecret
-    );
-    console.log("oalProof", oalProof);
-    const { v, r, s } = ethers.utils.splitSignature(creds.signature);
-    const RELAYER_URL = "https://relayer.holonym.id";
-    // console.log(
-    //   `${RELAYER_URL}/addLeaf`, JSON.stringify({
-    //     addLeafArgs: {
-    //         issuer : serverAddress,
-    //         v :  v,
-    //         r : r,
-    //         s : s,
-    //         zkp : oalProof.proof,
-    //         zkpInputs : oalProof.inputs
-    //     }
-    //   })
-    // )
-    let res;
-    try {
-      res = await axios.post(`${RELAYER_URL}/addLeaf`, {
-        addLeafArgs: {
-          issuer: serverAddress,
-          v: v,
-          r: r,
-          s: s,
-          zkp: oalProof.proof,
-          zkpInputs: oalProof.inputs,
-        },
-      });
-    } catch (e) {
-      console.log("There was an error:", e);
-      setError("There was an error in submitting your transaction");
-    }
-
-    console.log("result");
-    console.log(res);
+  const [submissionConsent, setSubmissionConsent] = useState(false);
+  const [readyToLoadCreds, setReadyToLoadCreds] = useState();
+  
+  const { data: account } = useAccount();
+  
+  const proofs = {
+    "us-residency" : { name : "US Residency", loadProof : loadPoR, contractAddress: proofContractAddresses["optimistic-goerli"]["ResidencyStore"], contractABI: residencyStoreABI },
+    "uniqueness" : { name : "Uniqueness", loadProof : loadAntiSybil, contractAddress: proofContractAddresses["optimistic-goerli"]["AntiSybilStore"], contractABI: antiSybilStoreABI },
   }
 
   async function loadPoR() {
-    const newSecret = creds.newSecret;
-    const leaf = await createLeaf(
-      serverAddress,
-      newSecret,
-      creds.countryCode,
-      creds.subdivisionHex,
-      creds.completedAtHex,
-      creds.birthdateHex
-    );
-
-    console.log("leaf", leaf);
-    const leavesFromContract = []; // TODO: Get leaves from merkle tree smart contract
-    const leaves = [...leavesFromContract, leaf];
-    const tree = new IncrementalMerkleTree(poseidonHashQuinary, 14, "0", 5);
-    for (const item of leaves) {
-      tree.insert(item);
-    }
-    const index = tree.indexOf(leaf);
-    const merkleProof = tree.createProof(index);
-    const serializedMerkleProof = serializeProof(merkleProof, poseidonHashQuinary);
-
-    // if(!address) {
-    //   setError("Please connect your wallet");
-    //   await sleep(1000);
-    // } else if(error == "Please connect your wallet") {
-    //   setError("");
-    // }
-    const salt =
-      "18450029681611047275023442534946896643130395402313725026917000686233641593164"; // this number is poseidon("IsFromUS")
+    const salt = "18450029681611047275023442534946896643130395402313725026917000686233641593164"; // this number is poseidon("IsFromUS")
     const footprint = await poseidonTwoInputs([
       salt,
-      ethers.BigNumber.from(newSecret).toString(),
+      ethers.BigNumber.from(creds.newSecret).toString(),
     ]);
 
-    const [root_, leaf_, path_, indices_] = serializedMerkleProof;
-    const lob3Proof = await proofOfResidency(
-      root_,
-      address, // || "0x483293fCB4C2EE29A02D74Ff98C976f9d85b1AAd", //Delete that lmao
+    const por = await proofOfResidency(
+      account.address,
       serverAddress,
       salt,
       footprint,
@@ -122,23 +92,39 @@ const Proofs = () => {
       creds.subdivisionHex,
       creds.completedAtHex,
       creds.birthdateHex,
-      newSecret,
-      leaf_,
-      path_,
-      indices_
+      creds.newSecret,
     );
-    console.log(JSON.stringify(lob3Proof));
-    setProof(lob3Proof);
-    // TODO: Call smart contracts
-    // contract.updateLeaf(oalProof)
-    // contract.proveResidence(lob3Proof)
+    setProof(por);
+  }
+
+
+  async function loadAntiSybil() {
+    const actionId = params.actionId || "123456789";
+    if(!params.actionId) console.error("Warning: no actionId was given, using default of 123456789 (generic cross-action sybil resistance)")
+    console.log("actionId", actionId)
+    const footprint = await poseidonTwoInputs([
+      actionId,
+      ethers.BigNumber.from(creds.newSecret).toString(),
+    ]);
+    console.log("footprint", footprint)
+    const as = await antiSybil(
+      account.address,
+      serverAddress,
+      actionId,
+      footprint,
+      creds.countryCode,
+      creds.subdivisionHex,
+      creds.completedAtHex,
+      creds.birthdateHex,
+      creds.newSecret,
+    );
+    setProof(as);
+    console.log("proof is", JSON.stringify(as))
   }
 
   useEffect(() => {
-    async function init() {
-      // Delete this line:
-      // const c = {birthdate: "1996-09-06", completedAt: "1969-06-09", countryCode: 0, newSecret: "0xb9d3ca1602fad29499f3ee47f729f875", secret: "0x89e0bc2174cb908298ce2f38987995a1", signature: "0x6440eb3b1871fa0e5ad052b81fb6cfe570b8ec74e753c45462778ef5f3302e17071cf538fa78d7c99a2c98e370f7d85ff82942364e8110f2960caf51819128c71b", subdivision: "CA"}
-      // Replace with:
+    if (!readyToLoadCreds) return;
+    async function getCreds() {
       const c = await requestCredentials();
       console.log("creds", JSON.stringify(c));
       if (c) {
@@ -153,30 +139,74 @@ const Proofs = () => {
           "Could not retrieve credentials for proof. Please make sure you have the Holonym extension installed."
         );
       }
-      console.log("creds", c);
     }
-    init();
-  }, []);
+    getCreds();
+  }, [readyToLoadCreds]);
 
   useEffect(() => {
-    console.log("entered useEffect");
+    if (!(account?.address)) return;
     if (!creds) return;
-    const proofType = params.proofType;
-    console.log(`proofType: ${proofType}`);
-    if (proofType === "us-residency") {
-      loadPoR();
-    } else if (proofType === "addLeaf") {
-      // addLeaf();
-    }
+    if (!(params.proofType in proofs)) return;
+    proofs[params.proofType].loadProof();
   }, [creds]);
 
+  useEffect(()=>{
+    if (account?.address) setReadyToLoadCreds(true);
+  }, [account])
+
+  useEffect(()=>{
+    if(!(submissionConsent && creds && proof)) return;
+    submitTx(proofs[params.proofType].contractAddress, proofs[params.proofType].contractABI);
+  }, [proof, submissionConsent])
+
+  if(account && !window.ethereum) {
+    setError("Currently, this only works with MetaMask");
+    return;
+  }
+  
+  
+  async function submitTx(addr, abi) {
+    console.log("submitting");
+    window.ethereum.request({
+      method: "wallet_addEthereumChain",
+      params: [{
+          chainId: "0x1a4",
+          rpcUrls: ["https://goerli.optimism.io/"],
+          chainName: "Optimism Goerli Testnet",
+          nativeCurrency: {
+              name: "ETH",
+              symbol: "ETH",
+              decimals: 18
+          },
+          blockExplorerUrls: ["https://goerli-optimism.etherscan.io"]
+      }]
+    });
+  
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+    const resStore = new ethers.Contract(addr, abi, signer);
+    try {
+      const result = await resStore.prove(
+        Object.keys(proof.proof).map(k=>proof.proof[k]), // Convert struct to ethers format 
+        proof.inputs
+      )
+      setSuccess(true);
+    } catch (e) {
+      setError(e.reason);
+    }
+  }
+
+  if(success){
+    if(params.callback) window.open("https://" + params.callback, "_blank");
+    return <Success title="Success" />
+  }
+
   return (
-    <Suspense fallback={<LoadingElement />}>
-      {
-        // true ? <><LoadingElement /><p>Currently, generating a proof may take 10-60s depending on your device</p></> :
+    // <Suspense fallback={<LoadingElement />}>
         <div className="x-container w-container">
           <div className="x-wrapper small-center" style={{ width: "100vw" }}>
-            <h3>Make your Holo</h3>
+            {!(account?.address) ? <ConnectWalletScreen /> : <>
+            <h3>Prove {proofs[params.proofType].name}</h3>
             <div>
               <div>
                 {error ? (
@@ -184,20 +214,26 @@ const Proofs = () => {
                 ) : (
                   <>
                     <p>
-                      When you see the popup, please confirm that you would like to
-                      share your credentials with this web page
+                      {creds ? 
+                      `Submitting will publicly link your wallet address to only this part of your identity: ${proofs[params.proofType].name}. The proof may take up to 15 seconds to load`
+                        :
+                      `Please confirm the popup so your proof can be generated`
+                      }
+                      
                     </p>
-                    <button className="verification-button" onClick={addLeaf}>
-                      Mint Your Holo
-                    </button>
+                    {creds ? 
+                      (proof ? <button className="x-button" onClick={()=>setSubmissionConsent(true)}>Submit proof</button> : <LoadingProofsButton />) 
+                      : 
+                      ""
+                    }                    
                   </>
                 )}
               </div>
             </div>
+            </>}
           </div>
         </div>
-      }
-    </Suspense>
+    // </Suspense>
   );
 };
 

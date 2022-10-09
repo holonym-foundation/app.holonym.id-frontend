@@ -153,6 +153,30 @@ function isLeapYear(year) {
   return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
 }
 
+/* Gets on-chain leaves and creates Merkle proof */
+export async function getMerkleProofParams(leaf) {
+  const leaves = await (await fetch(`https://relayer.holonym.id/getLeaves`)).json();
+  if(leaves.indexOf(leaf) == -1){
+    console.error(`Could not find leaf ${leaf} from querying on-chain list of leaves ${leaves}`)
+  }
+
+  const tree = new IncrementalMerkleTree(poseidonHashQuinary, 14, "0", 5);
+  for (const item of leaves) {
+    tree.insert(item);
+  }
+  
+  const index = tree.indexOf(leaf);
+  const merkleProof = tree.createProof(index);
+  const [root_, leaf_, path_, indices_] = serializeProof(merkleProof, poseidonHashQuinary); 
+
+  return {
+    root : root_,
+    leaf : leaf_,
+    path : path_,
+    indices : indices_
+  }
+}
+
 /**
  * (Forked from holo-merkle-utils)
  * Serializes createProof outputs to ZoKrates format
@@ -195,7 +219,6 @@ export function poseidonTwoInputs(input) {
     artifacts.poseidonTwoInputs,
     input
   );
-  console.log("output is 2", output);
   return output.replaceAll('"', "");
 }
 
@@ -218,7 +241,6 @@ export function poseidonHashQuinary(input) {
     artifacts.poseidonQuinary,
     input
   );
-  console.log("output is 3", output);
   return output.replaceAll('"', "");
 }
 
@@ -367,7 +389,6 @@ export async function onAddLeafProof(
  * @param {Array<string>} indices Numbers represented as strings
  */
 export async function proofOfResidency(
-  root,
   sender,
   issuer,
   salt,
@@ -377,39 +398,44 @@ export async function proofOfResidency(
   completedAt,
   birthdate,
   secret,
-  leaf,
-  path,
-  indices
-) {
+ ) {
   if (!zokProvider) {
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     // TODO: Make this more sophisticated. Wait for zokProvider to be set or for timeout (e.g., 10s)
     await sleep(5000);
   }
+  
+  
+  const leaf = await createLeaf(
+    serverAddress,
+    secret,
+    countryCode,
+    subdivision,
+    completedAt,
+    birthdate
+  );
+
+  const mp = await getMerkleProofParams(leaf);
+
   const args = [
-    root,
+    mp.root,
     ethers.BigNumber.from(sender).toString(),
     ethers.BigNumber.from(issuer).toString(),
+    salt,
+    footprint,
     ethers.BigNumber.from(countryCode).toString(),
-    ethers.BigNumber.from(new TextEncoder("utf-8").encode(subdivision)).toString(),
+    ethers.BigNumber.from(subdivision).toString(), //ethers.BigNumber.from(new TextEncoder("utf-8").encode(subdivision)).toString(),
     ethers.BigNumber.from(completedAt).toString(),
     ethers.BigNumber.from(birthdate).toString(),
     ethers.BigNumber.from(secret).toString(),
     leaf,
-    path,
-    indices,
+    mp.path,
+    mp.indices,
   ];
 
   await loadArtifacts("proofOfResidency");
   await loadProvingKey("proofOfResidency");
-  console.log(
-    "PROVING KEY IS",
-    provingKeys.proofOfResidency.length,
-    provingKeys.proofOfResidency
-  );
-  // await loadVerifyingKey("proofOfResidency");
-  // console.log("verifying keys 3 ", verifyingKeys);
-  // console.log("provingKeys3", provingKeys)
+
   const { witness, output } = zokProvider.computeWitness(
     artifacts.proofOfResidency,
     args
@@ -419,6 +445,79 @@ export async function proofOfResidency(
     artifacts.proofOfResidency.program,
     witness,
     provingKeys.proofOfResidency
+  );
+  return proof;
+}
+
+/**
+ * @param {string} issuer Hex string
+ * @param {string} secret Hex string representing 16 bytes
+ * @param {string} salt Hex string representing 16 bytes
+ * @param {string} footprint Hex string representing 16 bytes
+ * @param {number} countryCode
+ * @param {string} subdivision UTF-8
+ * @param {string} completedAt Hex string representing 3 bytes
+ * @param {string} birthdate Hex string representing 3 bytes
+ * @param {Array<Array<string>>} path Numbers represented as strings
+ * @param {Array<string>} indices Numbers represented as strings
+ */
+ export async function antiSybil(
+  sender,
+  issuer,
+  salt,
+  footprint,
+  countryCode,
+  subdivision,
+  completedAt,
+  birthdate,
+  secret,
+ ) {
+  if (!zokProvider) {
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    // TODO: Make this more sophisticated. Wait for zokProvider to be set or for timeout (e.g., 10s)
+    await sleep(5000);
+  }
+  
+  
+  const leaf = await createLeaf(
+    serverAddress,
+    secret,
+    countryCode,
+    subdivision,
+    completedAt,
+    birthdate
+  );
+
+  const mp = await getMerkleProofParams(leaf);
+
+  const args = [
+    mp.root,
+    ethers.BigNumber.from(sender).toString(),
+    ethers.BigNumber.from(issuer).toString(),
+    salt,
+    footprint,
+    ethers.BigNumber.from(countryCode).toString(),
+    ethers.BigNumber.from(subdivision).toString(), //ethers.BigNumber.from(new TextEncoder("utf-8").encode(subdivision)).toString(),
+    ethers.BigNumber.from(completedAt).toString(),
+    ethers.BigNumber.from(birthdate).toString(),
+    ethers.BigNumber.from(secret).toString(),
+    leaf,
+    mp.path,
+    mp.indices,
+  ];
+
+  await loadArtifacts("antiSybil");
+  await loadProvingKey("antiSybil");
+
+  const { witness, output } = zokProvider.computeWitness(
+    artifacts.antiSybil,
+    args
+  );
+
+  const proof = zokProvider.generateProof(
+    artifacts.antiSybil.program,
+    witness,
+    provingKeys.antiSybil
   );
   return proof;
 }
