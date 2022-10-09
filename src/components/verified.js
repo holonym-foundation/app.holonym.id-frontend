@@ -36,13 +36,9 @@ const Verified = () => {
   const [creds, setCreds] = useState();
 
   async function getCredentials() {
-    // if (!localStorage.getItem("holoTempSecret")) {
-    //   return;
-    // }
     setError(undefined);
     setLoading(true);
     try {
-      // const secret = localStorage.getItem("holoTempSecret");
       const resp = await fetch(
         `${zkIdVerifyEndpoint}/registerVouched/vouchedCredentials?jobID=${jobID}`
       );
@@ -54,7 +50,6 @@ const Verified = () => {
         setLoading(false);
         const credsTemp = data.user;
         setCreds(credsTemp);
-        localStorage.removeItem("holoTempSecret");
         return credsTemp;
       }
     } catch (err) {
@@ -228,6 +223,13 @@ const Verified = () => {
         </div>
       )}
       <p>{error}</p>
+      {error && (
+        <p>
+          Please email Holonym support at{" "}
+          <a href="mailto:help@holonym.id">help@holonym.id</a> with a description of
+          the error.
+        </p>
+      )}
     </>
   );
 };
