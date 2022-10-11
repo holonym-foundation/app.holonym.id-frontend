@@ -28,7 +28,7 @@ const dummyUserCreds = {
 const Verified = () => {
   const { jobID } = useParams();
   const [error, setError] = useState();
-  const [loading, setLoading] = useState();
+  const [loading, setLoading] = useState(true);
   const [storageSuccess, setStorageSuccess] = useState(false);
   const [registered, setRegistered] = useState(false);
   const [successScreen, setSuccessScreen] = useState(false);
@@ -36,13 +36,9 @@ const Verified = () => {
   const [creds, setCreds] = useState();
 
   async function getCredentials() {
-    // if (!localStorage.getItem("holoTempSecret")) {
-    //   return;
-    // }
     setError(undefined);
     setLoading(true);
     try {
-      // const secret = localStorage.getItem("holoTempSecret");
       const resp = await fetch(
         `${zkIdVerifyEndpoint}/registerVouched/vouchedCredentials?jobID=${jobID}`
       );
@@ -54,7 +50,6 @@ const Verified = () => {
         setLoading(false);
         const credsTemp = data.user;
         setCreds(credsTemp);
-        localStorage.removeItem("holoTempSecret");
         return credsTemp;
       }
     } catch (err) {
@@ -102,6 +97,20 @@ const Verified = () => {
       setStorageSuccess(success);
       if (!success)
         setError("Could not receive confirmation from user to store credentials");
+      else {
+        try {
+          // Request credentials. Need to request because extension generates new secret
+          const newCreds = await requestCredentials();
+          setCreds({
+            ...newCreds,
+            subdivisionHex: getStateAsHexString(newCreds.subdivision),
+            completedAtHex: getDateAsHexString(newCreds.completedAt),
+            birthdateHex: getDateAsHexString(newCreds.birthdate),
+          });
+        } catch (e) {
+          setError("There was a problem in storing your credentials");
+        }
+      }
     }
     try {
       func();
@@ -110,21 +119,22 @@ const Verified = () => {
       setError(`Error: ${err.message}`);
     }
     // For tests
-    // storeCredentials(dummyUserCreds).then((success) => {
+    // setLoading(false);
+    // storeCredentials(dummyUserCreds).then(async (success) => {
+    //   const newCreds = await requestCredentials();
     //   setCreds({
-    //     ...dummyUserCreds,
-    //     subdivisionHex: getStateAsHexString(dummyUserCreds.subdivision),
-    //     completedAtHex: getDateAsHexString(dummyUserCreds.completedAt),
-    //     birthdateHex: getDateAsHexString(dummyUserCreds.birthdate),
+    //     ...newCreds,
+    //     subdivisionHex: getStateAsHexString(newCreds.subdivision),
+    //     completedAtHex: getDateAsHexString(newCreds.completedAt),
+    //     birthdateHex: getDateAsHexString(newCreds.birthdate),
     //   });
     //   setStorageSuccess(success);
     // });
   }, []);
 
   async function addLeaf() {
-    const newCreds = await requestCredentials();
     const oldSecret = creds.secret;
-    const newSecret = newCreds.newSecret;
+    const newSecret = creds.newSecret;
     const oalProof = await onAddLeafProof(
       serverAddress,
       creds.countryCode,
@@ -149,23 +159,25 @@ const Verified = () => {
           zkpInputs: oalProof.inputs,
         },
       });
-      if(res.status == 200) {
+      if (res.status == 200) {
         setSuccessScreen(true);
       }
     } catch (e) {
       console.log("There was an error:", e);
-      setError("There was an error in submitting your transaction...perhaps you have already minted a Holo?");
+      setError(
+        "There was an error in submitting your transaction...perhaps you have already minted a Holo?"
+      );
     }
     console.log("result");
     console.log(res);
   }
 
-  if(successScreen) {
-    return <Success />
+  if (successScreen) {
+    return <Success />;
   }
   return (
     <>
-      { loading ? (
+      {loading ? (
         <h3 style={{ textAlign: "center" }}>Loading credentials...</h3>
       ) : (
         <div>
@@ -223,6 +235,13 @@ const Verified = () => {
         </div>
       )}
       <p>{error}</p>
+      {error && (
+        <p>
+          Please email Holonym support at{" "}
+          <a href="mailto:help@holonym.id">help@holonym.id</a> with a description of
+          the error.
+        </p>
+      )}
     </>
   );
 };
