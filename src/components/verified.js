@@ -49,7 +49,7 @@ const Verified = () => {
       // Shape of data == { user: completeUser }
       const data = await resp.json();
       if (data.error) {
-        setError(data.error);
+        setError(`Error: ${data.error}`);
       } else {
         setLoading(false);
         const credsTemp = data.user;
@@ -94,6 +94,7 @@ const Verified = () => {
           birthdateHex: getDateAsHexString(credsTemp.birthdate),
         });
       } catch(e) {
+        console.error(`There was a problem in storing your credentials. Details: ${e}`)
         setError("There was a problem in storing your credentials");
       }
 
