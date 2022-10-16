@@ -14,6 +14,7 @@ import {
   getDateAsHexString,
   onAddLeafProof,
 } from "../utils/proofs";
+import { ThreeDots } from "react-loader-spinner";
 import { Success } from "./success";
 
 // For test credentials, see id-server/src/main/utils/constants.js
@@ -178,7 +179,24 @@ const Verified = () => {
   return (
     <>
       {loading ? (
-        <h3 style={{ textAlign: "center" }}>Loading credentials...</h3>
+        <div style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+      }}>
+      <h3 style={{ textAlign: "center", paddingRight:"10px"}}>Loading credentials</h3>
+      <ThreeDots 
+        height="20" 
+        width="40" 
+        radius="2"
+        color="#FFFFFF" 
+        ariaLabel="three-dots-loading"
+        wrapperStyle={{marginBottom:"-20px"}}
+        wrapperClassName=""
+        visible={true}
+        />
+    </div>
+        
       ) : (
         <div>
           <h3 style={{ textAlign: "center" }}>Almost finished!</h3>
