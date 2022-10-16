@@ -85,12 +85,17 @@ const Verified = () => {
       try {
         setCreds({
           ...credsTemp,
-          subdivisionHex: getStateAsHexString(credsTemp.subdivision),
+          subdivisionHex: getStateAsHexString(
+            credsTemp.subdivision,
+            credsTemp.countryCode
+          ),
           completedAtHex: getDateAsHexString(credsTemp.completedAt),
           birthdateHex: getDateAsHexString(credsTemp.birthdate),
         });
-      } catch(e) {
-        console.error(`There was a problem in storing your credentials. Details: ${e}`)
+      } catch (e) {
+        console.error(
+          `There was a problem in storing your credentials. Details: ${e}`
+        );
         setError("There was a problem in storing your credentials");
       }
 
@@ -104,7 +109,10 @@ const Verified = () => {
           const newCreds = await requestCredentials();
           setCreds({
             ...newCreds,
-            subdivisionHex: getStateAsHexString(newCreds.subdivision),
+            subdivisionHex: getStateAsHexString(
+              newCreds.subdivision,
+              newCreds.countryCode
+            ),
             completedAtHex: getDateAsHexString(newCreds.completedAt),
             birthdateHex: getDateAsHexString(newCreds.birthdate),
           });
