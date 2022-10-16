@@ -137,7 +137,7 @@ const Proofs = () => {
         });
       } else {
         setError(
-          "Could not retrieve credentials for proof. Please make sure you have the Holonym extension installed."
+          "Could not retrieve credentials for proof. Please make sure you have the Holonym extension installed and have minted your Holo."
         );
       }
     }
