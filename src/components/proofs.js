@@ -71,7 +71,8 @@ const Proofs = () => {
   const [readyToLoadCreds, setReadyToLoadCreds] = useState();
   
   const { data: account } = useAccount();
-  
+  // Still have to do this in case metamask isn't logged in. would be good to have equivalent for other types of connectors, but we're not really using wagmi rn
+  window.ethereum.request({ method: "eth_requestAccounts" }).then(x=>console.log(x));
   const proofs = {
     "us-residency" : { name : "US Residency", loadProof : loadPoR, contractAddress: proofContractAddresses["optimistic-goerli"]["ResidencyStore"], contractABI: residencyStoreABI },
     "uniqueness" : { name : "Uniqueness", loadProof : loadAntiSybil, contractAddress: proofContractAddresses["optimistic-goerli"]["AntiSybilStore"], contractABI: antiSybilStoreABI },
@@ -201,7 +202,7 @@ const Proofs = () => {
     if(params.callback) window.location.href=("https://" + params.callback);
     return <Success title="Success" />
   }
-
+  console.log("has address?", (account?.address))
   return (
     // <Suspense fallback={<LoadingElement />}>
         <div className="x-container w-container">
