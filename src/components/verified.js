@@ -45,7 +45,7 @@ const Verified = () => {
       // Shape of data == { user: completeUser }
       const data = await resp.json();
       if (data.error) {
-        setError(data.error);
+        setError(`Error: ${data.error}`);
       } else {
         setLoading(false);
         const credsTemp = data.user;
@@ -80,7 +80,19 @@ const Verified = () => {
         setError(undefined);
       }
       const credsTemp = await getCredentials();
-      console.log("storing creds");
+
+      try {
+        setCreds({
+          ...credsTemp,
+          subdivisionHex: getStateAsHexString(credsTemp.subdivision),
+          completedAtHex: getDateAsHexString(credsTemp.completedAt),
+          birthdateHex: getDateAsHexString(credsTemp.birthdate),
+        });
+      } catch(e) {
+        console.error(`There was a problem in storing your credentials. Details: ${e}`)
+        setError("There was a problem in storing your credentials");
+      }
+
       const success = await storeCredentials(credsTemp);
       setStorageSuccess(success);
       if (!success)

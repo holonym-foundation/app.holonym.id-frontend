@@ -18,6 +18,7 @@ import antiSybilStoreABI from "../constants/abi/zk-contracts/AntiSybilStore.json
 
 import { Success } from "./success";
 import { Oval } from "react-loader-spinner";
+import { truncateAddress } from "../utils/ui-helpers";
 
 
 const ConnectWalletScreen = () => (
@@ -136,7 +137,7 @@ const Proofs = () => {
         });
       } else {
         setError(
-          "Could not retrieve credentials for proof. Please make sure you have the Holonym extension installed."
+          "Could not retrieve credentials for proof. Please make sure you have the Holonym extension installed and have minted your Holo."
         );
       }
     }
@@ -197,7 +198,7 @@ const Proofs = () => {
   }
 
   if(success){
-    if(params.callback) window.open("https://" + params.callback, "_blank");
+    if(params.callback) window.location.href=("https://" + params.callback);
     return <Success title="Success" />
   }
 
@@ -215,7 +216,7 @@ const Proofs = () => {
                   <>
                     <p>
                       {creds ? 
-                      `Submitting will publicly link your wallet address to only this part of your identity: ${proofs[params.proofType].name}. The proof may take up to 15 seconds to load`
+                      <>This will prove you (<code>{truncateAddress(account.address)})</code> have the attribute: <code>{proofs[params.proofType].name}</code>. It may take 5-15 seconds to load.</>
                         :
                       `Please confirm the popup so your proof can be generated`
                       }
