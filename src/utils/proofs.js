@@ -67,14 +67,10 @@ initialize().then(async (zokratesProvider) => {
  * Convert state (e.g., "California") to a 2-byte representation of its abbreviation.
  * @returns {string}
  */
-export function getStateAsHexString(state) {
-  return (
-    "0x" +
-    new TextEncoder()
-      .encode(stateAbbreviations[state.toUpperCase()])
-      .toString()
-      .replaceAll(",", "")
-  );
+export function getStateAsHexString(state, countryCode) {
+  if (!state || countryCode !== 2) return "0x";
+  state = state.length === 2 ? state : stateAbbreviations[state.toUpperCase()];
+  return "0x" + new TextEncoder("utf-8").encode(state).toString().replaceAll(",", "");
 }
 
 /**
@@ -156,25 +152,30 @@ function isLeapYear(year) {
 /* Gets on-chain leaves and creates Merkle proof */
 export async function getMerkleProofParams(leaf) {
   const leaves = await (await fetch(`https://relayer.holonym.id/getLeaves`)).json();
-  if(leaves.indexOf(leaf) == -1){
-    console.error(`Could not find leaf ${leaf} from querying on-chain list of leaves ${leaves}`)
+  if (leaves.indexOf(leaf) == -1) {
+    console.error(
+      `Could not find leaf ${leaf} from querying on-chain list of leaves ${leaves}`
+    );
   }
 
   const tree = new IncrementalMerkleTree(poseidonHashQuinary, 14, "0", 5);
   for (const item of leaves) {
     tree.insert(item);
   }
-  
+
   const index = tree.indexOf(leaf);
   const merkleProof = tree.createProof(index);
-  const [root_, leaf_, path_, indices_] = serializeProof(merkleProof, poseidonHashQuinary); 
+  const [root_, leaf_, path_, indices_] = serializeProof(
+    merkleProof,
+    poseidonHashQuinary
+  );
 
   return {
-    root : root_,
-    leaf : leaf_,
-    path : path_,
-    indices : indices_
-  }
+    root: root_,
+    leaf: leaf_,
+    path: path_,
+    indices: indices_,
+  };
 }
 
 /**
@@ -397,15 +398,14 @@ export async function proofOfResidency(
   subdivision,
   completedAt,
   birthdate,
-  secret,
- ) {
+  secret
+) {
   if (!zokProvider) {
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     // TODO: Make this more sophisticated. Wait for zokProvider to be set or for timeout (e.g., 10s)
     await sleep(5000);
   }
-  
-  
+
   const leaf = await createLeaf(
     serverAddress,
     secret,
@@ -461,7 +461,7 @@ export async function proofOfResidency(
  * @param {Array<Array<string>>} path Numbers represented as strings
  * @param {Array<string>} indices Numbers represented as strings
  */
- export async function antiSybil(
+export async function antiSybil(
   sender,
   issuer,
   salt,
@@ -470,15 +470,14 @@ export async function proofOfResidency(
   subdivision,
   completedAt,
   birthdate,
-  secret,
- ) {
+  secret
+) {
   if (!zokProvider) {
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     // TODO: Make this more sophisticated. Wait for zokProvider to be set or for timeout (e.g., 10s)
     await sleep(5000);
   }
-  
-  
+
   const leaf = await createLeaf(
     serverAddress,
     secret,
@@ -509,10 +508,7 @@ export async function proofOfResidency(
   await loadArtifacts("antiSybil");
   await loadProvingKey("antiSybil");
 
-  const { witness, output } = zokProvider.computeWitness(
-    artifacts.antiSybil,
-    args
-  );
+  const { witness, output } = zokProvider.computeWitness(artifacts.antiSybil, args);
 
   const proof = zokProvider.generateProof(
     artifacts.antiSybil.program,
