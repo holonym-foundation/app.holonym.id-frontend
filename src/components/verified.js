@@ -33,6 +33,7 @@ const Verified = () => {
   const [storageSuccess, setStorageSuccess] = useState(false);
   const [registered, setRegistered] = useState(false);
   const [successScreen, setSuccessScreen] = useState(false);
+  const [minting, setMinting] = useState(false);
   // TODO: Check whether user is logged in too
   const [creds, setCreds] = useState();
 
@@ -142,6 +143,7 @@ const Verified = () => {
   }, []);
 
   async function addLeaf() {
+    setMinting(true);
     const oldSecret = creds.secret;
     const newSecret = creds.newSecret;
     const oalProof = await onAddLeafProof(
@@ -229,31 +231,46 @@ const Verified = () => {
                 <p>
                   <li>Confirm your credentials</li>
                 </p>
-                <li>
+                {/* <li>
                   <p>Share your credentials</p>
                   <p style={{ fontSize: ".8em" }}>
                     (The extension generates a new secret for you and requires your
                     consent to share it)
                   </p>
-                </li>
+                </li> */}
                 <li>
                   <p>Mint your Holo</p>
                 </li>
               </ol>
             </i>
-            <br />
-            <h4>The Holonym extension will store your encrypted credentials.</h4>
-            <br />
             {creds && storageSuccess ? (
               <div style={{ textAlign: "center" }}>
                 <button className="x-button-blue" onClick={addLeaf}>
+                  <div style={{ 
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center"
+                  }}>
                   Mint Your Holo
+                  {minting && <ThreeDots 
+                    height="20" 
+                    width="20" 
+                    radius="2"
+                    color="#0F0F0F" 
+                    ariaLabel="three-dots-loading"
+                    wrapperStyle={{marginLeft:"20px"}}
+                    wrapperClassName=""
+                    visible={true}
+                    />}
+                    </div>
                 </button>
               </div>
             ) : (
-              <div style={{ textAlign: "center" }}>
+              <div style={{ 
+                textAlign: "center",
+              }}>
                 <button className="x-button-blue greyed-out-button">
-                  Mint Your Holo
+                  Mint your Holo
                 </button>
               </div>
             )}
