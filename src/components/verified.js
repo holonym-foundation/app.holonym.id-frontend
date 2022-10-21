@@ -46,8 +46,9 @@ const Verified = () => {
       );
       // Shape of data == { user: completeUser }
       const data = await resp.json();
-      if (data.error) {
-        setError(`Error: ${data.error}`);
+      if (!data || data.error) {
+        console.error(`Could not retrieve credentials. Details: ${data.error}`);
+        return;
       } else {
         setLoading(false);
         const credsTemp = data.user;
@@ -55,8 +56,7 @@ const Verified = () => {
         return credsTemp;
       }
     } catch (err) {
-      console.log(err);
-      setError(`Error: ${err.message}`);
+      console.error(`Could not retrieve credentials. Details: ${err}`);
     }
   }
 
@@ -82,6 +82,10 @@ const Verified = () => {
         setError(undefined);
       }
       const credsTemp = await getCredentials();
+      if (!credsTemp) {
+        setError(`Error: Could not retrieve credentials.`);
+        return;
+      }
 
       try {
         setCreds({
@@ -97,7 +101,7 @@ const Verified = () => {
         console.error(
           `There was a problem in storing your credentials. Details: ${e}`
         );
-        setError("There was a problem in storing your credentials");
+        setError("Error: There was a problem in storing your credentials");
       }
 
       const success = await storeCredentials(credsTemp);
