@@ -70,7 +70,7 @@ const Proofs = () => {
   const [readyToLoadCreds, setReadyToLoadCreds] = useState();
 
   const { data: account } = useAccount();
-
+  
   const proofs = {
     "us-residency": {
       name: "US Residency",
@@ -109,21 +109,21 @@ const Proofs = () => {
   }
 
   async function loadAntiSybil() {
-    const actionId = params.actionId || "123456789";
-    if (!params.actionId)
+    const appId = params.appId || "123456789";
+    if (!params.appId)
       console.error(
-        "Warning: no actionId was given, using default of 123456789 (generic cross-action sybil resistance)"
+        "Warning: no appId was given, using default of 123456789 (generic cross-action sybil resistance)"
       );
-    console.log("actionId", actionId);
+    console.log("appId", appId);
     const footprint = await poseidonTwoInputs([
-      actionId,
+      appId,
       ethers.BigNumber.from(creds.newSecret).toString(),
     ]);
     console.log("footprint", footprint);
     const as = await antiSybil(
       account.address,
       serverAddress,
-      actionId,
+      appId,
       footprint,
       creds.countryCode,
       creds.subdivisionHex,
@@ -217,7 +217,17 @@ const Proofs = () => {
     if (params.callback) window.location.href = "https://" + params.callback;
     return <Success title="Success" />;
   }
-
+  // Still have to do this in case metamask isn't logged in. would be good to have equivalent for other types of connectors, but we're not really using wagmi rn
+  try {
+    window.ethereum.request({ method: "eth_requestAccounts" });
+  } catch(e) {
+    console.error("Unable to call eth_requestAccounts. Installing Metamask may fix this bug")
+    return <div className="x-container w-container">
+            <div className="x-wrapper small-center" style={{ width: "100vw" }}>
+            <h3>Please install <a href="https://metamask.io/">Metamask</a></h3>
+            </div>
+          </div>
+  }
   return (
     // <Suspense fallback={<LoadingElement />}>
     <div className="x-container w-container">
