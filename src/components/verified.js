@@ -165,6 +165,8 @@ const Verified = () => {
       }
       const alreadyHasCreds = await getUserHasCreds();
       if (alreadyHasCreds) {
+        setUserHasCreds(true);
+        setLoading(false);
         const credsTemp = await requestCredentials();
         setCreds({
           ...credsTemp,
@@ -175,8 +177,6 @@ const Verified = () => {
           completedAtHex: getDateAsHexString(credsTemp.completedAt),
           birthdateHex: getDateAsHexString(credsTemp.birthdate),
         });
-        setUserHasCreds(true);
-        setLoading(false);
         return;
       }
 
