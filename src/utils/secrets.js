@@ -6,7 +6,9 @@ let extensionId;
 if (!process.env.NODE_ENV || process.env.NODE_ENV === "development") {
   extensionId =
     process.env.REACT_APP_EXTENSION_ID || "cilbidmppfndfhjafdlngkaabddoofea";
-  if(!process.env.REACT_APP_EXTENSION_ID){ console.error("Warning: no extension ID specified")}
+  if (!process.env.REACT_APP_EXTENSION_ID) {
+    console.error("Warning: no extension ID specified");
+  }
 } else {
   // production code
   extensionId = "obhgknpelgngeabaclepndihajndjjnb";
@@ -98,6 +100,18 @@ export function getIsHoloRegistered() {
     // eslint-disable-next-line no-undef
     chrome.runtime.sendMessage(extensionId, payload, callback);
     console.log("sent to", extensionId);
+  });
+}
+
+// Get whether the user has credentials
+export function getUserHasCreds() {
+  return new Promise((resolve) => {
+    const payload = {
+      command: "holoGetHasCredentials",
+    };
+    const callback = (resp) => resolve(resp);
+    // eslint-disable-next-line no-undef
+    chrome.runtime.sendMessage(extensionId, payload, callback);
   });
 }
 

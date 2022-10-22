@@ -123,6 +123,7 @@ function App() {
           {/* <Route path={"/zk-id/verify"} element={<Verify />} /> */}
           <Route exact path={"/"} element={<Welcome />} />
           <Route path={"/verified/:jobID"} element={<Verified />} />
+          <Route path={"/verified"} element={<Verified />} />
           {/* <Route path={"/zk-id/verified"} element={<Verified />} /> */}
           <Route exact path={"/prove"} element={<ProofMenu />} />
           {/* For when there are actionIds and callbacks (right now, this feature is used by the uniqueness proof) */}

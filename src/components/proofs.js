@@ -139,7 +139,6 @@ const Proofs = () => {
     if (!readyToLoadCreds) return;
     async function getCreds() {
       const c = await requestCredentials();
-      console.log("creds", JSON.stringify(c));
       if (c) {
         setCreds({
           ...c,

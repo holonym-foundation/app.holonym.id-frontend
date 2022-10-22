@@ -6,6 +6,7 @@ import { useParams } from "react-router-dom";
 import {
   storeCredentials,
   getIsHoloRegistered,
+  getUserHasCreds,
   requestCredentials,
 } from "../utils/secrets";
 import { zkIdVerifyEndpoint, serverAddress } from "../constants/misc";
@@ -25,6 +26,87 @@ const dummyUserCreds = {
   birthdate: "1950-01-01",
 };
 
+const MintHoloButton = (active, creds, onMint, onError) => {
+  const [minting, setMinting] = useState(false);
+
+  async function addLeaf() {
+    setMinting(true);
+    const oldSecret = creds.secret;
+    const newSecret = creds.newSecret;
+    const oalProof = await onAddLeafProof(
+      serverAddress,
+      creds.countryCode,
+      creds.subdivisionHex,
+      creds.completedAtHex,
+      creds.birthdateHex,
+      oldSecret,
+      newSecret
+    );
+    console.log("oalProof", oalProof);
+    const { v, r, s } = ethers.utils.splitSignature(creds.signature);
+    const RELAYER_URL = "https://relayer.holonym.id";
+    let res;
+    try {
+      res = await axios.post(`${RELAYER_URL}/addLeaf`, {
+        addLeafArgs: {
+          issuer: serverAddress,
+          v: v,
+          r: r,
+          s: s,
+          zkp: oalProof.proof,
+          zkpInputs: oalProof.inputs,
+        },
+      });
+      if (res.status == 200) onMint();
+    } catch (e) {
+      console.log("There was an error:", e);
+      onError(e);
+    }
+    console.log("result");
+    console.log(res);
+  }
+
+  return (
+    <>
+      {active ? (
+        <div style={{ textAlign: "center" }}>
+          <button className="x-button-blue" onClick={addLeaf}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              Mint Your Holo
+              {minting && (
+                <ThreeDots
+                  height="20"
+                  width="20"
+                  radius="2"
+                  color="#0F0F0F"
+                  ariaLabel="three-dots-loading"
+                  wrapperStyle={{ marginLeft: "20px" }}
+                  wrapperClassName=""
+                  visible={true}
+                />
+              )}
+            </div>
+          </button>
+        </div>
+      ) : (
+        <div
+          style={{
+            textAlign: "center",
+          }}
+        >
+          <button className="x-button-blue greyed-out-button">Mint your Holo</button>
+        </div>
+      )}
+    </>
+  );
+};
+
 // Display success message, and retrieve user credentials to store in browser
 const Verified = () => {
   const { jobID } = useParams();
@@ -32,9 +114,9 @@ const Verified = () => {
   const [loading, setLoading] = useState(true);
   const [storageSuccess, setStorageSuccess] = useState(false);
   const [registered, setRegistered] = useState(false);
-  const [successScreen, setSuccessScreen] = useState(false);
-  const [minting, setMinting] = useState(false);
+  const [userHasCreds, setUserHasCreds] = useState(false);
   // TODO: Check whether user is logged in too
+  const [successScreen, setSuccessScreen] = useState(false);
   const [creds, setCreds] = useState();
 
   async function getCredentials() {
@@ -81,6 +163,23 @@ const Verified = () => {
         await waitForUserRegister();
         setError(undefined);
       }
+      const alreadyHasCreds = await getUserHasCreds();
+      if (alreadyHasCreds) {
+        const credsTemp = await requestCredentials();
+        setCreds({
+          ...credsTemp,
+          subdivisionHex: getStateAsHexString(
+            credsTemp.subdivision,
+            credsTemp.countryCode
+          ),
+          completedAtHex: getDateAsHexString(credsTemp.completedAt),
+          birthdateHex: getDateAsHexString(credsTemp.birthdate),
+        });
+        setUserHasCreds(true);
+        setLoading(false);
+        return;
+      }
+
       const credsTemp = await getCredentials();
       if (!credsTemp) {
         setError(`Error: Could not retrieve credentials.`);
@@ -146,71 +245,46 @@ const Verified = () => {
     // });
   }, []);
 
-  async function addLeaf() {
-    setMinting(true);
-    const oldSecret = creds.secret;
-    const newSecret = creds.newSecret;
-    const oalProof = await onAddLeafProof(
-      serverAddress,
-      creds.countryCode,
-      creds.subdivisionHex,
-      creds.completedAtHex,
-      creds.birthdateHex,
-      oldSecret,
-      newSecret
-    );
-    console.log("oalProof", oalProof);
-    const { v, r, s } = ethers.utils.splitSignature(creds.signature);
-    const RELAYER_URL = "https://relayer.holonym.id";
-    let res;
-    try {
-      res = await axios.post(`${RELAYER_URL}/addLeaf`, {
-        addLeafArgs: {
-          issuer: serverAddress,
-          v: v,
-          r: r,
-          s: s,
-          zkp: oalProof.proof,
-          zkpInputs: oalProof.inputs,
-        },
-      });
-      if (res.status == 200) {
-        setSuccessScreen(true);
-      }
-    } catch (e) {
-      console.log("There was an error:", e);
-      setError(
-        "There was an error in submitting your transaction...perhaps you have already minted a Holo?"
-      );
-    }
-    console.log("result");
-    console.log(res);
-  }
-
   if (successScreen) {
     return <Success />;
   }
   return (
     <>
       {loading ? (
-        <div style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-      }}>
-      <h3 style={{ textAlign: "center", paddingRight:"10px"}}>Loading credentials</h3>
-      <ThreeDots 
-        height="20" 
-        width="40" 
-        radius="2"
-        color="#FFFFFF" 
-        ariaLabel="three-dots-loading"
-        wrapperStyle={{marginBottom:"-20px"}}
-        wrapperClassName=""
-        visible={true}
-        />
-    </div>
-        
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <h3 style={{ textAlign: "center", paddingRight: "10px" }}>
+            Loading credentials
+          </h3>
+          <ThreeDots
+            height="20"
+            width="40"
+            radius="2"
+            color="#FFFFFF"
+            ariaLabel="three-dots-loading"
+            wrapperStyle={{ marginBottom: "-20px" }}
+            wrapperClassName=""
+            visible={true}
+          />
+        </div>
+      ) : userHasCreds ? (
+        <div>
+          <MintHoloButton
+            active={true}
+            creds={creds}
+            onMint={() => setSuccessScreen(true)}
+            onError={(err) =>
+              setError(
+                "There was an error in submitting your transaction...perhaps you have already minted a Holo?"
+              )
+            }
+          />
+        </div>
       ) : (
         <div>
           <h3 style={{ textAlign: "center" }}>Almost finished!</h3>
@@ -247,37 +321,16 @@ const Verified = () => {
                 </li>
               </ol>
             </i>
-            {creds && storageSuccess ? (
-              <div style={{ textAlign: "center" }}>
-                <button className="x-button-blue" onClick={addLeaf}>
-                  <div style={{ 
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center"
-                  }}>
-                  Mint Your Holo
-                  {minting && <ThreeDots 
-                    height="20" 
-                    width="20" 
-                    radius="2"
-                    color="#0F0F0F" 
-                    ariaLabel="three-dots-loading"
-                    wrapperStyle={{marginLeft:"20px"}}
-                    wrapperClassName=""
-                    visible={true}
-                    />}
-                    </div>
-                </button>
-              </div>
-            ) : (
-              <div style={{ 
-                textAlign: "center",
-              }}>
-                <button className="x-button-blue greyed-out-button">
-                  Mint your Holo
-                </button>
-              </div>
-            )}
+            <MintHoloButton
+              active={creds && storageSuccess}
+              creds={creds}
+              onMint={() => setSuccessScreen(true)}
+              onError={(err) =>
+                setError(
+                  "There was an error in submitting your transaction...perhaps you have already minted a Holo?"
+                )
+              }
+            />
           </div>
         </div>
       )}
