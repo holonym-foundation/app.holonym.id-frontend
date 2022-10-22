@@ -109,21 +109,21 @@ const Proofs = () => {
   }
 
   async function loadAntiSybil() {
-    const appId = params.appId || "123456789";
-    if (!params.appId)
+    const actionId = params.actionId || "123456789";
+    if (!params.actionId)
       console.error(
-        "Warning: no appId was given, using default of 123456789 (generic cross-action sybil resistance)"
+        "Warning: no actionId was given, using default of 123456789 (generic cross-action sybil resistance)"
       );
-    console.log("appId", appId);
+    console.log("actionId", actionId);
     const footprint = await poseidonTwoInputs([
-      appId,
+      actionId,
       ethers.BigNumber.from(creds.newSecret).toString(),
     ]);
     console.log("footprint", footprint);
     const as = await antiSybil(
       account.address,
       serverAddress,
-      appId,
+      actionId,
       footprint,
       creds.countryCode,
       creds.subdivisionHex,
