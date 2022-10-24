@@ -2,9 +2,9 @@ import { useState, useEffect, Suspense } from "react";
 import { useParams } from "react-router-dom";
 import { ethers } from "ethers";
 import { useAccount } from "wagmi";
+import { getStateAsHexString } from "@holonym-foundation/utils";
 import { requestCredentials } from "../utils/secrets";
 import {
-  getStateAsHexString,
   getDateAsHexString,
   poseidonTwoInputs,
   proofOfResidency,
