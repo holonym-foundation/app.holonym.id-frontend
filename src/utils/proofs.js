@@ -64,16 +64,6 @@ initialize().then(async (zokratesProvider) => {
 });
 
 /**
- * Convert state (e.g., "California") to a 2-byte representation of its abbreviation.
- * @returns {string}
- */
-export function getStateAsHexString(state, countryCode) {
-  if (!state || countryCode !== 2) return "0x";
-  state = state.length === 2 ? state : stateAbbreviations[state.toUpperCase()];
-  return "0x" + new TextEncoder("utf-8").encode(state).toString().replaceAll(",", "");
-}
-
-/**
  * Convert date string to 3-byte hex string with the following structure:
  * byte 1: number of years since 1900
  * bytes 2-3: number of days since beginning of the year

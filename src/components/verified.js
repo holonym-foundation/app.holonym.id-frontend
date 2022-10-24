@@ -3,6 +3,7 @@ import { ethers } from "ethers";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 
+import { getStateAsHexString } from "@holonym-foundation/utils";
 import {
   storeCredentials,
   getIsHoloRegistered,
@@ -10,11 +11,7 @@ import {
   requestCredentials,
 } from "../utils/secrets";
 import { zkIdVerifyEndpoint, serverAddress } from "../constants/misc";
-import {
-  getStateAsHexString,
-  getDateAsHexString,
-  onAddLeafProof,
-} from "../utils/proofs";
+import { getDateAsHexString, onAddLeafProof } from "../utils/proofs";
 import { ThreeDots } from "react-loader-spinner";
 import { Success } from "./success";
 

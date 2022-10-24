@@ -2,9 +2,9 @@ import { useState, useEffect, Suspense } from "react";
 import { useParams } from "react-router-dom";
 import { ethers } from "ethers";
 import { useAccount } from "wagmi";
+import { getStateAsHexString } from "@holonym-foundation/utils";
 import { requestCredentials } from "../utils/secrets";
 import {
-  getStateAsHexString,
   getDateAsHexString,
   poseidonTwoInputs,
   proofOfResidency,
@@ -70,7 +70,7 @@ const Proofs = () => {
   const [readyToLoadCreds, setReadyToLoadCreds] = useState();
 
   const { data: account } = useAccount();
-  
+
   const proofs = {
     "us-residency": {
       name: "US Residency",
@@ -219,13 +219,19 @@ const Proofs = () => {
   // Still have to do this in case metamask isn't logged in. would be good to have equivalent for other types of connectors, but we're not really using wagmi rn
   try {
     window.ethereum.request({ method: "eth_requestAccounts" });
-  } catch(e) {
-    console.error("Unable to call eth_requestAccounts. Installing Metamask may fix this bug")
-    return <div className="x-container w-container">
-            <div className="x-wrapper small-center" style={{ width: "100vw" }}>
-            <h3>Please install <a href="https://metamask.io/">Metamask</a></h3>
-            </div>
-          </div>
+  } catch (e) {
+    console.error(
+      "Unable to call eth_requestAccounts. Installing Metamask may fix this bug"
+    );
+    return (
+      <div className="x-container w-container">
+        <div className="x-wrapper small-center" style={{ width: "100vw" }}>
+          <h3>
+            Please install <a href="https://metamask.io/">Metamask</a>
+          </h3>
+        </div>
+      </div>
+    );
   }
   return (
     // <Suspense fallback={<LoadingElement />}>
